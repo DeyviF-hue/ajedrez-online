@@ -56,10 +56,15 @@ io.on('connection', (socket) => {
 
     // Unirse a Sala
     socket.on('joinRoom', (roomId, callback) => {
-        roomId = roomId.toUpperCase();
+        console.log(`[JOIN] Intento de unión a sala: "${roomId}" desde ${socket.id}`);
+        
+        if (!roomId) return callback({ success: false, message: 'Código de sala inválido.' });
+
+        roomId = roomId.toUpperCase().trim();
         const room = rooms[roomId];
 
         if (!room) {
+            console.log(`[JOIN ERROR] La sala "${roomId}" no existe en el servidor.`);
             return callback({ success: false, message: 'La sala no existe.' });
         }
 

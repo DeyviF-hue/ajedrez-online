@@ -28,6 +28,7 @@
             overflow-x: hidden;
             overflow-y: auto;
             position: relative;
+            margin: 0;
         }
 
         /* Fondo animado estilo gaming caótico */
@@ -39,6 +40,7 @@
                         radial-gradient(circle at 70% 70%, rgba(0, 242, 254, 0.05) 0%, transparent 40%);
             animation: orbFloat 25s ease-in-out infinite alternate;
             z-index: 0;
+            pointer-events: none;
         }
 
         body::after {
@@ -607,14 +609,24 @@
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
+                console.log("Formulario enviado. Procesando nueva partida...");
+                const roomCodeInput = document.getElementById('menu-room-code').value.trim();
+                
+                // Forzar limpieza absoluta si no hay código escrito
+                const finalRoomCode = (roomCodeInput && roomCodeInput.length > 2) ? roomCodeInput : null;
+                
                 const config = {
                     mode: modeSelect.value,
                     time: document.getElementById('menu-time').value,
                     difficulty: document.getElementById('menu-difficulty').value,
-                    roomCode: document.getElementById('menu-room-code').value.trim(),
+                    roomCode: finalRoomCode,
                     isNewGame: true
                 };
                 localStorage.setItem('ajedrezConfig', JSON.stringify(config));
+                console.log("Configuración guardada:", config);
+                // Importante: Si es partida nueva, borramos el estado anterior para evitar conflictos
+                if (config.isNewGame) localStorage.removeItem('ajedrezState');
+                
                 window.location.href = '/game/';
             });
 

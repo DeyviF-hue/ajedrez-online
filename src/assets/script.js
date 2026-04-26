@@ -96,6 +96,7 @@ function initGame() {
     isOnline = config.mode === 'online';
 
     if (isOnline) {
+        if (suggestBtn) suggestBtn.style.display = 'none';
         initSocketConnection();
         return; // Detiene el flujo normal hasta que el server responda
     }
@@ -129,9 +130,21 @@ function initSocketConnection() {
     statusEl.textContent = 'Conectando al servidor multijugador...';
     
     socket.on('connect', () => {
-        if (config.roomCode) {
-            socket.emit('joinRoom', config.roomCode, handleRoomResponse);
+        console.log("Conectado al servidor. Configuración cargada:", config);
+        
+        // Validación ultra-estricta del código de sala
+        const rCode = config.roomCode;
+        const isValidCode = rCode && 
+                            typeof rCode === 'string' && 
+                            rCode.trim() !== "" && 
+                            rCode !== "null" && 
+                            rCode !== "undefined";
+
+        if (isValidCode) {
+            console.log(">> ACCIÓN: Intentando UNIRSE a sala:", rCode);
+            socket.emit('joinRoom', rCode.trim(), handleRoomResponse);
         } else {
+            console.log(">> ACCIÓN: Intentando CREAR sala nueva...");
             socket.emit('createRoom', { time: config.time }, handleRoomResponse);
         }
     });
@@ -140,9 +153,14 @@ function initSocketConnection() {
         board = data.board;
         currentTurn = data.currentTurn;
         statusEl.innerHTML = `Oponente conectado. <br> <strong>Eres las ${myColor === 'w' ? 'BLANCAS' : 'NEGRAS'}</strong>.`;
+        
+        // Ocultar panel de sala al empezar
+        const roomPanel = document.getElementById('online-room-panel');
+        if (roomPanel) roomPanel.classList.add('d-none');
+
         boardEl.style.pointerEvents = 'auto'; // Desbloquear tablero
         renderBoard();
-        startGlobalTimer();
+        startTimer();
     });
 
     socket.on('opponentMove', (moveData) => {
@@ -162,7 +180,29 @@ function handleRoomResponse(res) {
         currentRoomId = res.roomId;
         myColor = res.color;
         if (myColor === 'w') {
-            statusEl.textContent = `Código de Sala: ${currentRoomId} - Esperando oponente...`;
+            statusEl.textContent = `Esperando oponente...`;
+            
+            // Mostrar panel de sala destacado
+            const roomPanel = document.getElementById('online-room-panel');
+            const codeDisplay = document.getElementById('room-code-display');
+            const copyBtn = document.getElementById('copy-room-btn');
+            
+            if (roomPanel && codeDisplay) {
+                roomPanel.classList.remove('d-none');
+                codeDisplay.textContent = currentRoomId;
+                
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(currentRoomId);
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '¡Copiado!';
+                    copyBtn.classList.replace('btn-primary', 'btn-success');
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                        copyBtn.classList.replace('btn-success', 'btn-primary');
+                    }, 2000);
+                };
+            }
+
             boardEl.style.pointerEvents = 'none'; // Bloquear interacciones hasta gameStart
             initNewGameLocal(); // Inicializa visualmente el tablero local pero bloqueado
         } else {
@@ -174,11 +214,18 @@ function handleRoomResponse(res) {
             statusEl.innerHTML = `¡Conectado! <br> <strong>Eres las NEGRAS</strong>.`;
             renderBoard();
             updateStatus();
-            startGlobalTimer();
+            startTimer();
         }
     } else {
+        console.error("Error del servidor:", res.message);
         alert(res.message);
-        window.location.href = 'menu.html';
+        
+        // LIMPIEZA DE EMERGENCIA: Si la sala no existe, borramos el código para que la próxima vez CREÉ una.
+        const staleConfig = JSON.parse(localStorage.getItem('ajedrezConfig') || '{}');
+        staleConfig.roomCode = null;
+        localStorage.setItem('ajedrezConfig', JSON.stringify(staleConfig));
+        
+        window.location.href = '/';
     }
 }
 
@@ -876,7 +923,7 @@ function bindDOMElements() {
 
     // Registrar eventos de botones
     suggestBtn.addEventListener('click', () => {
-        if (isGameOver || isPaused || pendingPromotion) return;
+        if (isGameOver || isPaused || pendingPromotion || isOnline) return;
         statusEl.textContent = 'Calculando sugerencia...';
         setTimeout(() => {
             const depth = 3; // Profundidad fija para sugerencias

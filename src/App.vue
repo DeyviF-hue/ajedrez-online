@@ -41,6 +41,20 @@
                     <div class="captured-pieces" id="captured-white"></div>
                     <h6 id="status-display" class="mb-0 fw-bold bg-primary text-white px-3 py-2 rounded-pill shadow-sm" style="font-size:0.9rem;">Cargando...</h6>
                 </div>
+
+                <!-- Panel de Sala Online (Nuevo) -->
+                <div id="online-room-panel" class="w-100 mt-3 d-none">
+                    <div class="card border-primary bg-primary bg-opacity-10 shadow-sm rounded-4">
+                        <div class="card-body p-3 text-center">
+                            <p class="text-primary fw-bold small mb-2 uppercase letter-spacing-1">CÓDIGO PARA TU AMIGO</p>
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <h2 id="room-code-display" class="display-6 fw-black mb-0 font-monospace text-primary">-----</h2>
+                                <button id="copy-room-btn" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">Copiar</button>
+                            </div>
+                            <p class="text-muted small mt-2 mb-0">Pasa este código a tu oponente para que se una a la partida.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Columna panel lateral -->
