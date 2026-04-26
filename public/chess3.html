@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ajedrez Pro - 3 Jugadores 🧪</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-body">
+
+<nav class="navbar navbar-dark bg-dark shadow-sm py-1">
+    <div class="container-fluid px-2 px-md-4">
+        <a class="navbar-brand fw-bold fs-6 m-0" href="menu.html">♟️ Ajedrez Pro</a>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge-beta d-none d-sm-inline-block">🧪 BETA</span>
+            <button id="theme-toggle3" class="btn btn-outline-secondary btn-sm border-0">🌓</button>
+            <button id="restart-btn3" class="btn btn-warning btn-sm fw-bold rounded-pill px-3 shadow-sm">Reiniciar</button>
+            <a href="menu.html" class="btn btn-danger btn-sm fw-bold rounded-pill px-3 shadow-sm">Salir</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-3 px-2 px-md-4 mb-4">
+    <div class="d-flex flex-column flex-xl-row gap-3 justify-content-center align-items-center align-items-xl-start">
+        
+        <!-- Tablero Principal y Jugadores -->
+        <div class="d-flex flex-column align-items-center w-100" style="max-width: 650px;">
+            
+            <!-- Estado y Timer Header -->
+            <div class="d-flex justify-content-between align-items-center w-100 mb-2 px-1">
+                <h6 id="status-display3" class="mb-0 fw-bold bg-primary text-white px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.85rem;">
+                    Cargando...
+                </h6>
+                <span class="badge bg-dark fs-6 px-3 py-2 rounded-pill border border-secondary shadow-sm" id="global-timer3">⏱️ 10:00</span>
+            </div>
+
+            <!-- Tablero -->
+            <div class="board3-container w-100 mb-3 shadow-lg">
+                <div id="chessboard3" class="chessboard3"></div>
+            </div>
+
+            <!-- Paneles de Jugadores -->
+            <div class="w-100">
+                <div class="row gx-2 gy-2" id="player-cards-row">
+                    <div class="col-6 col-sm-3">
+                        <div class="card player-card h-100" id="card-w">
+                            <div class="card-body p-2 d-flex align-items-center gap-2">
+                                <span class="badge color-badge-w px-2 py-1 fs-6 rounded-circle">♚</span>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold small text-truncate">Blancas</div>
+                                    <div id="status-w" class="text-muted text-truncate" style="font-size:0.7rem">Esperando...</div>
+                                    <span id="type-w" class="badge bg-secondary mt-1 d-inline-block text-truncate" style="font-size:0.6rem; max-width: 100%;">...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="card player-card h-100" id="card-b">
+                            <div class="card-body p-2 d-flex align-items-center gap-2">
+                                <span class="badge color-badge-b px-2 py-1 fs-6 rounded-circle">♚</span>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold small text-truncate">Negras</div>
+                                    <div id="status-b" class="text-muted text-truncate" style="font-size:0.7rem">Esperando...</div>
+                                    <span id="type-b" class="badge bg-secondary mt-1 d-inline-block text-truncate" style="font-size:0.6rem; max-width: 100%;">...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="card player-card h-100" id="card-r">
+                            <div class="card-body p-2 d-flex align-items-center gap-2">
+                                <span class="badge color-badge-r px-2 py-1 fs-6 rounded-circle">♚</span>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold small text-truncate">Rojas</div>
+                                    <div id="status-r" class="text-muted text-truncate" style="font-size:0.7rem">Esperando...</div>
+                                    <span id="type-r" class="badge bg-secondary mt-1 d-inline-block text-truncate" style="font-size:0.6rem; max-width: 100%;">...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3" id="card-g" style="display:none">
+                        <div class="card player-card h-100" style="border-color:#16a34a">
+                            <div class="card-body p-2 d-flex align-items-center gap-2">
+                                <span class="badge color-badge-g px-2 py-1 fs-6 rounded-circle">♚</span>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold small text-truncate">Verdes</div>
+                                    <div id="status-g" class="text-muted text-truncate" style="font-size:0.7rem">Esperando...</div>
+                                    <span id="type-g" class="badge bg-secondary mt-1 d-inline-block text-truncate" style="font-size:0.6rem; max-width: 100%;">...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="w-100 mt-2 mt-xl-0" style="max-width: 650px; width: 100%; flex: 1 1 350px;">
+            <div class="card shadow-sm border-0 h-100 bg-body-tertiary">
+                <div class="card-header fw-bold py-2 bg-transparent text-uppercase small text-muted border-bottom-0">
+                    Historial de Movimientos
+                </div>
+                <div class="card-body p-2 d-flex flex-column pt-0">
+                    <div id="move-history3" class="move-history flex-grow-1 p-2 bg-body rounded-3 shadow-sm border" style="max-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: Configuración de Jugadores -->
+<div class="modal fade" id="configModal3" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="modal-header text-white border-0" style="background:linear-gradient(45deg,#ff6b6b,#ffd93d);">
+                <h5 class="modal-title fw-bold text-dark">🧪 Modo 3 Jugadores — Configurar</h5>
+            </div>
+            <div class="modal-body py-4 bg-body-tertiary">
+                <!-- Selector de Tiempo -->
+                <div class="mb-4 bg-body p-3 rounded-3 shadow-sm border">
+                    <label class="form-label fw-bold small text-muted text-uppercase">Duración de la Partida</label>
+                    <select id="cfg-time" class="form-select form-select-lg fw-bold">
+                        <option value="10">Rápida — 10 Minutos</option>
+                        <option value="20">Normal — 20 Minutos</option>
+                        <option value="30">Larga — 30 Minutos</option>
+                        <option value="60">Torneo — 1 Hora</option>
+                    </select>
+                </div>
+
+                <!-- Toggle 4 jugadores -->
+                <div class="form-check form-switch mb-4 bg-body p-3 rounded-3 shadow-sm border d-flex align-items-center gap-2">
+                    <input class="form-check-input fs-4 m-0" type="checkbox" id="cfg-include-g" role="switch">
+                    <label class="form-check-label fw-bold ms-2" for="cfg-include-g">
+                        🟢 Activar 4º Jugador (Verdes)
+                    </label>
+                </div>
+
+                <!-- Presets -->
+                <div class="mb-4">
+                    <p class="fw-bold mb-2 small text-muted text-uppercase">Atajos Rápidos:</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold" id="preset-3h">👤x3</button>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold" id="preset-3ai">🤖x3</button>
+                        <button class="btn btn-outline-success btn-sm rounded-pill fw-bold" id="preset-1h2ai">👤 vs 🤖x2</button>
+                        <button class="btn btn-outline-warning btn-sm rounded-pill fw-bold" id="preset-2h1ai">👤x2 vs 🤖</button>
+                        
+                        <!-- Presets ocultos o extra compactos para 4 -->
+                        <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold" id="preset-4h" style="display:none;">👤x4</button>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold" id="preset-4ai" style="display:none;">🤖x4</button>
+                        <button class="btn btn-outline-success btn-sm rounded-pill fw-bold" id="preset-2h2ai" style="display:none;">👤x2 vs 🤖x2</button>
+                        <button class="btn btn-outline-warning btn-sm rounded-pill fw-bold" id="preset-1h3ai" style="display:none;">👤 vs 🤖x3</button>
+                    </div>
+                    <script>
+                        // Mostrar atajos de 4 jugadores cuando se activa
+                        document.getElementById('cfg-include-g').addEventListener('change', (e) => {
+                            const show = e.target.checked;
+                            ['4h','4ai','2h2ai','1h3ai'].forEach(id => document.getElementById('preset-'+id).style.display = show ? 'inline-block' : 'none');
+                            ['3h','3ai','1h2ai','2h1ai'].forEach(id => document.getElementById('preset-'+id).style.display = show ? 'none' : 'inline-block');
+                        });
+                    </script>
+                </div>
+
+                <p class="fw-bold mb-2 small text-muted text-uppercase">Configuración Individual:</p>
+                <div class="list-group shadow-sm">
+                    <!-- Blancas -->
+                    <div class="list-group-item d-flex align-items-center justify-content-between p-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge color-badge-w px-2 py-1 rounded-circle">♚</span>
+                            <span class="fw-bold">Blancas</span>
+                        </div>
+                        <select id="cfg-w" class="form-select form-select-sm w-auto fw-bold rounded-pill">
+                            <option value="human">👤 Humano</option>
+                            <option value="ai">🤖 IA</option>
+                        </select>
+                    </div>
+                    <!-- Negras -->
+                    <div class="list-group-item d-flex align-items-center justify-content-between p-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge color-badge-b px-2 py-1 rounded-circle">♚</span>
+                            <span class="fw-bold">Negras</span>
+                        </div>
+                        <select id="cfg-b" class="form-select form-select-sm w-auto fw-bold rounded-pill">
+                            <option value="human">👤 Humano</option>
+                            <option value="ai" selected>🤖 IA</option>
+                        </select>
+                    </div>
+                    <!-- Rojas -->
+                    <div class="list-group-item d-flex align-items-center justify-content-between p-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge color-badge-r px-2 py-1 rounded-circle">♚</span>
+                            <span class="fw-bold">Rojas</span>
+                        </div>
+                        <select id="cfg-r" class="form-select form-select-sm w-auto fw-bold rounded-pill">
+                            <option value="human">👤 Humano</option>
+                            <option value="ai" selected>🤖 IA</option>
+                        </select>
+                    </div>
+                    <!-- Verdes -->
+                    <div class="list-group-item d-flex align-items-center justify-content-between p-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge color-badge-g px-2 py-1 rounded-circle">♚</span>
+                            <span class="fw-bold">Verdes</span>
+                        </div>
+                        <select id="cfg-g" class="form-select form-select-sm w-auto fw-bold rounded-pill">
+                            <option value="human">👤 Humano</option>
+                            <option value="ai" selected>🤖 IA</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center bg-body py-3">
+                <a href="menu.html" class="btn btn-outline-secondary fw-bold rounded-pill px-4">Cancelar</a>
+                <button id="confirm-config3-btn" class="btn btn-dark fw-bold rounded-pill px-4 shadow-sm">
+                    Continuar →
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reglas -->
+<div class="modal fade" id="rulesModal3" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">🧪 Reglas del Modo Beta</h5>
+            </div>
+            <div class="modal-body bg-body-tertiary">
+                <ul class="list-unstyled mb-0 bg-body p-3 rounded-3 shadow-sm border">
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                        <span>⬜</span>
+                        <small><b>Blancas</b> inician abajo. Peones avanzan hacia arriba.</small>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                        <span>⬛</span>
+                        <small><b>Negras</b> inician arriba. Peones avanzan hacia abajo.</small>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                        <span>🟥</span>
+                        <small><b>Rojas</b> inician a la derecha. Peones avanzan hacia la izquierda.</small>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                        <span>🔄</span>
+                        <small>Los turnos rotan en el orden de los jugadores activos.</small>
+                    </li>
+                    <li class="mb-3 d-flex align-items-start gap-2">
+                        <span>👑</span>
+                        <small>Cuando capturan al Rey de un jugador, queda <b>eliminado</b>.</small>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 text-primary">
+                        <span>🏆</span>
+                        <small><b>El último jugador con Rey en pie gana la partida.</b></small>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer bg-body border-0 py-3">
+                <button id="start-game3-btn" class="btn btn-primary fw-bold w-100 rounded-pill shadow-sm py-2 fs-5">¡Comenzar Batalla!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Fin de Partida -->
+<div class="modal fade" id="gameOverModal3" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="modal-header bg-warning text-dark border-0 py-3">
+                <h5 class="modal-title fw-bold">🏆 Fin de la Partida</h5>
+            </div>
+            <div class="modal-body text-center py-5 bg-body-tertiary">
+                <h4 id="game-over-msg3" class="mb-0 fw-bold"></h4>
+            </div>
+            <div class="modal-footer border-0 justify-content-center bg-body py-3">
+                <a href="menu.html" class="btn btn-outline-secondary fw-bold rounded-pill">Ir al Menú</a>
+                <button id="play-again3-btn" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm">Jugar de Nuevo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Promoción -->
+<div class="modal fade" id="promotionModal3" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-2">
+                <h6 class="modal-title m-0 fw-bold">Promoción de Peón</h6>
+            </div>
+            <div class="modal-body text-center bg-body-tertiary py-4">
+                <p class="small text-muted mb-3 fw-bold">Elige la pieza:</p>
+                <div class="d-flex justify-content-center gap-3" id="promotion-options3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/chess3.js"></script>
+</body>
+</html>

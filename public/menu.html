@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ajedrez Pro - Play</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #00f2fe;
+            --secondary-glow: #4facfe;
+            --accent-neon: #ff0844;
+            --accent-neon-light: #ffb199;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at 50% 50%, #16162a 0%, #0a0a12 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Fondo animado estilo gaming */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(79, 172, 254, 0.03) 2px, transparent 3px),
+                        radial-gradient(circle, rgba(255, 8, 68, 0.03) 2px, transparent 3px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            animation: moveGrid 40s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes moveGrid {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-60px, -60px); }
+        }
+
+        .container {
+            z-index: 1;
+            position: relative;
+        }
+
+        .main-card {
+            background: rgba(20, 20, 35, 0.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px !important;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+
+        /* Brillo superior en la tarjeta */
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-glow), transparent);
+            opacity: 0.5;
+        }
+
+        .main-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(79, 172, 254, 0.1), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+        }
+
+        .home-title {
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff, var(--secondary-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+            text-shadow: 0 0 40px rgba(79, 172, 254, 0.3);
+            margin-bottom: 0.2rem;
+        }
+        
+        .subtitle {
+            color: #8b92a5;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .form-label { 
+            color: #a0a5ba; 
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group-custom {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s;
+        }
+        
+        .input-group-custom:focus-within {
+            border-color: rgba(79, 172, 254, 0.5);
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .select-modern {
+            background-color: transparent;
+            color: #fff;
+            border: none;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .select-modern:focus {
+            background-color: transparent;
+            color: #fff;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .select-modern option {
+            background-color: #1a1a2e;
+            color: #fff;
+            font-weight: 600;
+            padding: 10px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--secondary-glow), var(--primary-glow));
+            border: none;
+            color: #0a0a12;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.3), inset 0 -3px 0 rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .btn-start:hover { 
+            transform: translateY(-4px) scale(1.02); 
+            box-shadow: 0 15px 30px rgba(0, 242, 254, 0.4), inset 0 -3px 0 rgba(0,0,0,0.2); 
+            color: #000;
+        }
+
+        .btn-start:active { 
+            transform: translateY(2px); 
+            box-shadow: 0 5px 10px rgba(0, 242, 254, 0.3), inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-continue {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            box-shadow: none;
+            text-shadow: none;
+        }
+        
+        .btn-continue:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 0.75rem;
+            font-weight: 800;
+            margin: 1.8rem 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .separator::before { margin-right: 1em; }
+        .separator::after { margin-left: 1em; }
+
+        .btn-arcade {
+            background: rgba(255, 8, 68, 0.05);
+            border: 1px solid rgba(255, 8, 68, 0.3);
+            color: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+        }
+
+        .btn-arcade:hover {
+            background: rgba(255, 8, 68, 0.15);
+            border-color: var(--accent-neon);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 8, 68, 0.25), inset 0 0 15px rgba(255, 8, 68, 0.1);
+            color: #fff;
+        }
+
+        .badge-neon {
+            background: linear-gradient(135deg, var(--accent-neon), var(--accent-neon-light));
+            color: #000;
+            font-weight: 900;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(255, 8, 68, 0.5);
+        }
+
+        /* Animación de entrada */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+    </style>
+</head>
+<body>
+    
+    <div class="container px-3 py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-5">
+                <div class="card main-card fade-in-up">
+                    <div class="card-body p-4 p-sm-5">
+                        
+                        <div class="text-center mb-5 fade-in-up delay-1">
+                            <h1 class="display-4 home-title">AJEDREZ PRO</h1>
+                            <p class="subtitle mb-0">Selecciona tu Desafío</p>
+                        </div>
+
+                        <form id="menu-form" class="fade-in-up delay-2">
+                            <!-- Modo de Juego -->
+                            <div class="mb-4">
+                                <label class="form-label ms-2">MODO DE JUEGO</label>
+                                <div class="input-group-custom">
+                                    <select class="form-select select-modern" id="menu-mode">
+                                        <option value="pva">👤 Jugador vs 🤖 IA</option>
+                                        <option value="pvp">👤 2 Jugadores (Local)</option>
+                                        <option value="online">🌐 Multijugador Online</option>
+                                        <option value="ava">🤖 IA vs 🤖 IA (Espectador)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Código de Sala (Solo Online) -->
+                            <div class="mb-4 d-none" id="room-code-container">
+                                <label class="form-label ms-2">CÓDIGO DE SALA</label>
+                                <div class="input-group-custom">
+                                    <input type="text" id="menu-room-code" class="form-control select-modern text-uppercase" placeholder="Dejar vacío para CREAR sala">
+                                </div>
+                                <small class="text-muted ms-2 mt-1 d-block" style="font-size:0.65rem;">Pasa el código a tu amigo para que se una.</small>
+                            </div>
+
+                            <!-- Tiempo -->
+                            <div class="mb-4" id="time-container">
+                                <label class="form-label ms-2">TIEMPO LÍMITE</label>
+                                <div class="input-group-custom">
+                                    <select class="form-select select-modern" id="menu-time">
+                                        <option value="10">⚡ Blitz (10 Minutos)</option>
+                                        <option value="20">⏳ Clásica (20 Minutos)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Dificultad -->
+                            <div class="mb-5" id="difficulty-container">
+                                <label class="form-label ms-2">INTELIGENCIA ARTIFICIAL</label>
+                                <div class="input-group-custom">
+                                    <select class="form-select select-modern" id="menu-difficulty">
+                                        <option value="2">🟢 Fácil (Principiante)</option>
+                                        <option value="3" selected>🟡 Medio (Estratégico)</option>
+                                        <option value="4">🔴 Difícil (Gran Maestro)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+
+                            <button type="submit" class="btn btn-start w-100">
+                                ▶ Iniciar Partida
+                            </button>
+                            <button type="button" id="btn-continue" class="btn btn-start btn-continue w-100 mt-3 d-none">
+                                🔄 Continuar Partida
+                            </button>
+
+                            <div class="separator fade-in-up delay-3">O Explora</div>
+
+                            <a href="chess3.html" class="btn-arcade w-100 fade-in-up delay-3">
+                                <span>⚔️ Batalla 3 Jugadores</span>
+                                <span class="badge-neon">BETA</span>
+                            </a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('menu-form');
+            const modeSelect = document.getElementById('menu-mode');
+            const diffContainer = document.getElementById('difficulty-container');
+            const roomCodeContainer = document.getElementById('room-code-container');
+            const timeContainer = document.getElementById('time-container');
+            const btnContinue = document.getElementById('btn-continue');
+
+            // Mostrar "Continuar" si hay partida guardada
+            try {
+                const savedState = localStorage.getItem('ajedrezState');
+                if (savedState) {
+                    const stateObj = JSON.parse(savedState);
+                    if (stateObj.board && stateObj.board.length > 0 && !stateObj.isGameOver) {
+                        btnContinue.classList.remove('d-none');
+                    }
+                }
+            } catch(e) {}
+
+            // Ocultar dificultad/tiempo según modo
+            modeSelect.addEventListener('change', (e) => {
+                diffContainer.classList.remove('d-none');
+                roomCodeContainer.classList.add('d-none');
+                timeContainer.classList.remove('d-none');
+
+                if (e.target.value === 'pvp') {
+                    diffContainer.classList.add('d-none');
+                } else if (e.target.value === 'online') {
+                    diffContainer.classList.add('d-none');
+                    roomCodeContainer.classList.remove('d-none');
+                    // Solo el que crea la sala define el tiempo, el que se une lo recibe del server, pero lo simplificamos aquí dejando el selector visible para el creador
+                }
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const config = {
+                    mode: modeSelect.value,
+                    time: document.getElementById('menu-time').value,
+                    difficulty: document.getElementById('menu-difficulty').value,
+                    roomCode: document.getElementById('menu-room-code').value.trim(),
+                    isNewGame: true
+                };
+                localStorage.setItem('ajedrezConfig', JSON.stringify(config));
+                window.location.href = 'index.html';
+            });
+
+            btnContinue.addEventListener('click', () => {
+                const config = JSON.parse(localStorage.getItem('ajedrezConfig') || '{}');
+                config.isNewGame = false;
+                localStorage.setItem('ajedrezConfig', JSON.stringify(config));
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

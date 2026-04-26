@@ -1,0 +1,255 @@
+/* CSS para el Tablero y Componentes Específicos del Ajedrez */
+:root {
+    --board-light: #f0d9b5; /* Color madera claro */
+    --board-dark: #b58863;  /* Color madera oscuro */
+    --board-border: #8b5a2b;
+    --highlight: rgba(255, 255, 51, 0.5);
+    --valid-move: rgba(0, 0, 0, 0.15);
+    --check-bg: rgba(255, 0, 0, 0.6);
+}
+
+[data-bs-theme="dark"] {
+    --board-light: #eeeed2;
+    --board-dark: #769656;
+    --board-border: #2c3e50;
+    --valid-move: rgba(0, 0, 0, 0.3);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    /* Evitar pull-to-refresh en móviles y suavizar scroll */
+    overscroll-behavior-y: none; 
+}
+
+/* =======================================================
+   CONTENEDORES DEL TABLERO (RESPONSIVOS Y FLUIDOS)
+======================================================== */
+
+.board-container {
+    padding: 6px;
+    background-color: var(--board-border);
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin: 0 auto;
+}
+
+.chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.square {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: min(10vw, 55px); /* Fuente adaptable al grid fluido */
+    position: relative;
+}
+
+/* =======================================================
+   TABLERO 14x14 (MODO BETA)
+======================================================== */
+
+.board3-container {
+    padding: 6px;
+    background-color: #8b5a2b;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 650px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+}
+
+.chessboard3 {
+    display: grid;
+    grid-template-columns: repeat(14, 1fr);
+    grid-template-rows: repeat(14, 1fr);
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.square3 {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: min(6vw, 32px); /* Adaptable para 14x14 */
+    position: relative;
+    cursor: pointer;
+}
+
+/* =======================================================
+   COLORES DE CASILLAS
+======================================================== */
+
+.square.light, .square3.light3 { background-color: var(--board-light); }
+.square.dark, .square3.dark3 { background-color: var(--board-dark); }
+
+.square3.invalid3 {
+    background-color: #1a1a2e;
+    pointer-events: none; cursor: default;
+}
+[data-bs-theme="dark"] .square3.invalid3 { background-color: #080810; }
+
+/* Efectos visuales de estado (Selección, Jaque, etc) */
+.square.selected, .square3.sq-selected { box-shadow: inset 0 0 0 1000px var(--highlight); }
+.square.check, .square3.sq-check { box-shadow: inset 0 0 0 1000px var(--check-bg); }
+.square.last-move, .square3.sq-lastmove { box-shadow: inset 0 0 0 1000px rgba(173, 255, 47, 0.4); }
+
+.valid-move-indicator, .valid-dot3 {
+    width: 32%; height: 32%;
+    background-color: var(--valid-move);
+    border-radius: 50%;
+    position: absolute;
+    pointer-events: none; 
+}
+
+/* =======================================================
+   PIEZAS
+======================================================== */
+.piece, .piece3 {
+    cursor: grab;
+    transition: transform 0.1s;
+    user-select: none;
+    z-index: 10;
+    line-height: 1;
+}
+.piece:active, .piece3:active { cursor: grabbing; }
+.piece.dragging { opacity: 0.5; }
+
+/* Estilos de colores de piezas (iguales que antes pero optimizados) */
+.piece.white-piece, .piece3.w-piece {
+    color: #ffffff;
+    -webkit-text-stroke: 0.5px #000;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5);
+}
+.piece.black-piece, .piece3.b-piece {
+    color: #111111;
+    text-shadow: 0 2px 4px rgba(255,255,255,0.4);
+}
+.piece3.r-piece { color:#e63946; -webkit-text-stroke:0.3px #7a0000; text-shadow:0 2px 4px rgba(0,0,0,0.5); }
+.piece3.g-piece { color:#16a34a; -webkit-text-stroke:0.3px #052e16; text-shadow:0 2px 4px rgba(0,0,0,0.5); }
+
+.piece.animating {
+    position: absolute;
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+}
+
+/* =======================================================
+   PANELES Y UI SECUNDARIA
+======================================================== */
+
+.captured-pieces {
+    min-height: 38px;
+    flex-wrap: wrap;
+    font-size: 1.4rem;
+}
+.captured-piece { margin: 0 1px; display: inline-block; }
+
+.promotion-btn {
+    font-size: 2.2rem;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+.promotion-btn:hover { background: #e9ecef; }
+.promotion-btn:active { transform: scale(0.95); }
+
+/* Historial compacto */
+.move-history {
+    overflow-y: auto;
+    font-size: 0.9rem;
+    display: grid;
+    grid-template-columns: 35px 1fr 1fr;
+    gap: 6px;
+    align-items: center;
+    max-height: 180px;
+}
+.move-number { font-weight: 600; opacity: 0.6; text-align: right; padding-right: 5px; }
+.move-item {
+    padding: 3px;
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    text-align: center;
+}
+[data-bs-theme="dark"] .move-item { background-color: rgba(255,255,255,0.1); }
+.move-history::-webkit-scrollbar { width: 5px; }
+.move-history::-webkit-scrollbar-thumb { background-color: #aaa; border-radius: 3px; }
+
+/* Barra Evaluación Vertical Ajustada */
+.eval-container {
+    width: 14px;
+    height: 100%;
+    min-height: 300px;
+    background-color: #333;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid var(--board-border);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+.eval-bar-fill {
+    width: 100%; height: 50%;
+    background-color: #fff;
+    position: absolute; bottom: 0;
+    transition: height 0.5s ease-in-out;
+}
+.eval-text {
+    position: absolute; width: 100%; text-align: center;
+    font-size: 0.65rem; color: #888; mix-blend-mode: difference; z-index: 2;
+    transform: rotate(-90deg); /* Texto rotado para encajar mejor */
+}
+
+/* Ajustes para tarjetas (Cards) modernos */
+.card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+[data-bs-theme="dark"] .card { background-color: #212529; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+
+/* Botones genéricos */
+.btn { border-radius: 8px; }
+
+/* Paneles de Jugadores (Ajedrez 3) */
+.player-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+.player-card.active-turn { border-color: #ffd700 !important; box-shadow: 0 0 12px rgba(255,215,0,0.4); }
+.player-card.eliminated { opacity: 0.35; filter: grayscale(1); }
+
+.color-badge-w { background:#eee; color:#333; border:1px solid #aaa; }
+.color-badge-b { background:#333; color:#fff; }
+.color-badge-r { background:#e63946; color:#fff; }
+.color-badge-g { background:#16a34a; color:#fff; }
+
+.badge-beta {
+    background: linear-gradient(45deg,#ff6b6b,#ffd93d);
+    color:#1a1a2e; font-weight:800; letter-spacing:1px;
+    padding:4px 12px; border-radius:20px; font-size:0.72rem;
+}
