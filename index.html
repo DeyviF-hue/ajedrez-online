@@ -1,21 +1,630 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
+<html lang="es" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ajedrez Pro</title>
+    <title>Ajedrez Pro - Play</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/src/assets/styles.css">
-</head>
-<body class="bg-body">
-    <div id="app"></div>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #00f2fe;
+            --secondary-glow: #a18cd1;
+            --accent-neon: #ff0844;
+            --accent-neon-light: #ffb199;
+            --chaotic-border: 18px 6px 18px 6px; /* Asimetría sutil */
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at 50% 50%, #16162a 0%, #0a0a12 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Script original: cargado primero para que 'vue-mounted' listener esté registrado -->
-    <script type="module" src="/src/assets/script.js"></script>
-    <!-- Vue entry (dispara 'vue-mounted' al terminar de montar) -->
-    <script type="module" src="/src/main.js"></script>
+        /* Fondo animado estilo gaming caótico */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(161, 140, 209, 0.05) 0%, transparent 40%),
+                        radial-gradient(circle at 70% 70%, rgba(0, 242, 254, 0.05) 0%, transparent 40%);
+            animation: orbFloat 25s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%; top: 0; left: 0;
+            background: url('data:image/svg+xml;utf8,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.03)"/></svg>');
+            z-index: 0;
+        }
+
+        @keyframes orbFloat {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-30px, 20px) rotate(2deg); }
+            100% { transform: translate(20px, -30px) rotate(-1deg); }
+        }
+
+        @keyframes moveGrid {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-60px, -60px); }
+        }
+
+        .container {
+            z-index: 1;
+            position: relative;
+        }
+
+        .main-card {
+            background: rgba(20, 20, 35, 0.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px !important;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+
+        /* Brillo superior en la tarjeta */
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-glow), transparent);
+            opacity: 0.5;
+        }
+
+        .main-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(79, 172, 254, 0.1), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+        }
+
+        .home-title {
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+            text-shadow: 0 0 20px rgba(161, 140, 209, 0.4);
+            margin-bottom: 0.2rem;
+            animation: textPulse 4s ease-in-out infinite alternate;
+        }
+        
+        @keyframes textPulse {
+            0% { filter: brightness(1); text-shadow: 0 0 20px rgba(161, 140, 209, 0.4); }
+            100% { filter: brightness(1.2); text-shadow: 0 0 35px rgba(0, 242, 254, 0.6); }
+        }
+        
+        .subtitle {
+            color: #8b92a5;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .form-label { 
+            color: #a0a5ba; 
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group-custom {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--chaotic-border);
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .input-group-custom:focus-within, .input-group-custom:hover {
+            border-color: rgba(161, 140, 209, 0.5);
+            box-shadow: 0 0 20px rgba(161, 140, 209, 0.2);
+            background: rgba(0, 0, 0, 0.5);
+            transform: rotate(-1deg) scale(1.01);
+        }
+
+        .select-modern {
+            background-color: transparent;
+            color: #fff;
+            border: none;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            border-radius: var(--chaotic-border);
+        }
+        
+        .select-modern:focus {
+            background-color: transparent;
+            color: #fff;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .select-modern option {
+            background-color: #1a1a2e;
+            color: #fff;
+            font-weight: 600;
+            padding: 10px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #ff0844, #ffb199);
+            border: none;
+            color: #fff;
+            border-radius: var(--chaotic-border);
+            padding: 18px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(255, 8, 68, 0.3), inset 0 -3px 0 rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+            animation: btnPulse 2s infinite;
+        }
+
+        @keyframes btnPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 8, 68, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 8, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 8, 68, 0); }
+        }
+
+        .btn-start:hover { 
+            transform: translateY(-5px) scale(1.03) rotate(1deg); 
+            box-shadow: 0 20px 35px rgba(255, 8, 68, 0.5), inset 0 -3px 0 rgba(0,0,0,0.2); 
+            color: #fff;
+        }
+
+        .btn-start:active { 
+            transform: translateY(2px) scale(0.98); 
+            box-shadow: 0 5px 10px rgba(255, 8, 68, 0.3), inset 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-continue {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            box-shadow: none;
+            text-shadow: none;
+        }
+        
+        .btn-continue:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: rgba(255,255,255,0.2);
+            font-size: 0.75rem;
+            font-weight: 800;
+            margin: 1.8rem 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .separator::before { margin-right: 1em; }
+        .separator::after { margin-left: 1em; }
+
+        .btn-arcade {
+            background: rgba(255, 8, 68, 0.05);
+            border: 1px solid rgba(255, 8, 68, 0.3);
+            color: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+        }
+
+        .btn-arcade:hover {
+            background: rgba(255, 8, 68, 0.15);
+            border-color: var(--accent-neon);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 8, 68, 0.25), inset 0 0 15px rgba(255, 8, 68, 0.1);
+            color: #fff;
+        }
+
+        .badge-neon {
+            background: linear-gradient(135deg, var(--accent-neon), var(--accent-neon-light));
+            color: #000;
+            font-weight: 900;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(255, 8, 68, 0.5);
+        }
+
+        /* Animación de entrada */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* Estilo para el indicador de versión (Badge Moderno) */
+        .version-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(10, 10, 18, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(20px);
+            animation: slideFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.5s;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Comportamiento: Opacidad baja por defecto tras cargar, brilla al hacer hover */
+        .version-badge.loaded {
+            opacity: 0.3;
+        }
+
+        .version-badge:hover {
+            opacity: 1 !important;
+            background: rgba(20, 20, 35, 0.8);
+            border-color: rgba(79, 172, 254, 0.3);
+            box-shadow: 0 4px 20px rgba(79, 172, 254, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .version-badge .v-text {
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .version-badge .d-text {
+            color: #8b92a5;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes slideFadeIn {
+            to { opacity: 0.8; transform: translateX(0); }
+        }
+
+        @media (max-width: 576px) {
+            .version-badge {
+                top: auto;
+                bottom: 15px;
+                right: 15px;
+                padding: 6px 12px;
+                transform: translateY(20px);
+                animation: slideFadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .version-badge .d-text {
+                display: none; /* Ocultar texto largo en móviles para no tapar */
+            }
+        }
+
+        @keyframes slideFadeInUp {
+            to { opacity: 0.8; transform: translateY(0); }
+        }
+
+        /* Estilo para la Barra de Info UX */
+        .info-bar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(20, 20, 35, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+            max-width: 90%;
+            width: auto;
+        }
+
+        .info-bar.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .info-bar.fade-out {
+            opacity: 0.2;
+        }
+
+        .info-bar:hover {
+            opacity: 1 !important;
+            transform: translateX(-50%) translateY(-5px);
+            background: rgba(30, 30, 50, 0.8);
+            border-color: var(--primary-glow);
+        }
+
+        .info-bar .info-icon {
+            font-size: 1.2rem;
+            animation: iconWiggle 3s ease-in-out infinite;
+        }
+
+        .info-bar .info-text {
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .info-bar .close-info {
+            background: none;
+            border: none;
+            color: #8b92a5;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .info-bar .close-info:hover {
+            color: var(--accent-neon);
+        }
+
+        @keyframes iconWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+
+        @media (max-width: 576px) {
+            .info-bar {
+                bottom: 60px; /* Un poco más arriba para no chocar con el badge de versión si este baja */
+                width: 85%;
+                padding: 8px 15px;
+            }
+            .info-bar .info-text {
+                font-size: 0.75rem;
+                white-space: normal;
+                text-align: center;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Badge de Versión Elegante -->
+    <div class="version-badge" id="versionBadge">
+        <span class="v-text">v1.6</span>
+        <span class="d-text">• by Deyvi</span>
+    </div>
+
+    <!-- Barra informativa UX -->
+    <div class="info-bar" id="infoBar">
+        <span class="info-icon">✨</span>
+        <p class="info-text">Esta app fue creada para experimentar con nuevas formas de jugar ajedrez • by Deyvi</p>
+        <button class="close-info" id="closeInfo">✕</button>
+    </div>
+    
+    <div class="container px-3 py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-5">
+                <div class="card main-card fade-in-up">
+                    <div class="card-body p-4 p-sm-5">
+                        
+                        <div class="text-center mb-5 fade-in-up delay-1">
+                            <h1 class="display-4 home-title">AJEDREZ PRO</h1>
+                            <p class="subtitle mb-0">Selecciona tu Desafío</p>
+                        </div>
+
+                        <form id="menu-form" class="fade-in-up delay-2">
+                            <!-- Modo de Juego -->
+                            <div class="mb-4">
+                                <label class="form-label ms-2">MODO DE JUEGO</label>
+                                <div class="input-group-custom">
+                                    <select class="form-select select-modern" id="menu-mode">
+                                        <option value="pva">👤 Jugador vs 🤖 IA</option>
+                                        <option value="pvp">👤 2 Jugadores (Local)</option>
+                                        <option value="online">🌐 Multijugador Online</option>
+                                        <option value="ava">🤖 IA vs 🤖 IA (Espectador)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Código de Sala (Solo Online) -->
+                            <div class="mb-4 d-none" id="room-code-container">
+                                <label class="form-label ms-2">CÓDIGO DE SALA</label>
+                                <div class="input-group-custom">
+                                    <input type="text" id="menu-room-code" class="form-control select-modern text-uppercase" placeholder="Dejar vacío para CREAR sala">
+                                </div>
+                                <small class="text-muted ms-2 mt-1 d-block" style="font-size:0.65rem;">Pasa el código a tu amigo para que se una.</small>
+                            </div>
+
+                            <!-- Tiempo -->
+                            <div class="mb-4" id="time-container">
+                                <label class="form-label ms-2">TIEMPO LÍMITE</label>
+                                <div class="input-group-custom">
+                                    <select class="form-select select-modern" id="menu-time">
+                                        <option value="10">⚡ Blitz (10 Minutos)</option>
+                                        <option value="20">⏳ Clásica (20 Minutos)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Dificultad -->
+                            <div class="mb-5" id="difficulty-container">
+                                <label class="form-label ms-2">INTELIGENCIA ARTIFICIAL</label>
+                                <div class="input-group-custom">
+                                    <select class="form-select select-modern" id="menu-difficulty">
+                                        <option value="2">🟢 Fácil (Principiante)</option>
+                                        <option value="3" selected>🟡 Medio (Estratégico)</option>
+                                        <option value="4">🔴 Difícil (Gran Maestro)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+
+                            <button type="submit" class="btn btn-start w-100">
+                                ▶ Iniciar Partida
+                            </button>
+                            <button type="button" id="btn-continue" class="btn btn-start btn-continue w-100 mt-3 d-none">
+                                🔄 Continuar Partida
+                            </button>
+
+                            <div class="separator fade-in-up delay-3">O Explora</div>
+
+                            <a href="chess3.html" class="btn-arcade w-100 fade-in-up delay-3">
+                                <span>⚔️ Batalla 3 Jugadores</span>
+                                <span class="badge-neon">BETA</span>
+                            </a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoBar = document.getElementById('infoBar');
+            const closeInfo = document.getElementById('closeInfo');
+
+            // La barra informativa empieza oculta (display: none se maneja en el CSS o al inicio)
+            infoBar.style.display = 'none';
+
+            closeInfo.addEventListener('click', () => {
+                infoBar.style.display = 'none';
+            });
+
+            // Al hacer clic en el badge de versión, mostrar la info bar
+            const versionBadge = document.getElementById('versionBadge');
+            versionBadge.addEventListener('click', () => {
+                infoBar.style.display = 'flex';
+                infoBar.classList.remove('fade-out');
+                infoBar.classList.add('visible');
+                
+                // Reiniciar el auto-ocultamiento
+                setTimeout(() => {
+                    infoBar.classList.add('fade-out');
+                }, 5000);
+            });
+
+            // Animación de auto-ocultamiento del badge
+            setTimeout(() => {
+                const badge = document.getElementById('versionBadge');
+                if(badge) badge.classList.add('loaded');
+            }, 3500);
+
+            const form = document.getElementById('menu-form');
+            const modeSelect = document.getElementById('menu-mode');
+            const diffContainer = document.getElementById('difficulty-container');
+            const roomCodeContainer = document.getElementById('room-code-container');
+            const timeContainer = document.getElementById('time-container');
+            const btnContinue = document.getElementById('btn-continue');
+
+            // Mostrar "Continuar" si hay partida guardada
+            try {
+                const savedState = localStorage.getItem('ajedrezState');
+                if (savedState) {
+                    const stateObj = JSON.parse(savedState);
+                    if (stateObj.board && stateObj.board.length > 0 && !stateObj.isGameOver) {
+                        btnContinue.classList.remove('d-none');
+                    }
+                }
+            } catch(e) {}
+
+            // Ocultar dificultad/tiempo según modo
+            modeSelect.addEventListener('change', (e) => {
+                diffContainer.classList.remove('d-none');
+                roomCodeContainer.classList.add('d-none');
+                timeContainer.classList.remove('d-none');
+
+                if (e.target.value === 'pvp') {
+                    diffContainer.classList.add('d-none');
+                } else if (e.target.value === 'online') {
+                    diffContainer.classList.add('d-none');
+                    roomCodeContainer.classList.remove('d-none');
+                    // Solo el que crea la sala define el tiempo, el que se une lo recibe del server, pero lo simplificamos aquí dejando el selector visible para el creador
+                }
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const config = {
+                    mode: modeSelect.value,
+                    time: document.getElementById('menu-time').value,
+                    difficulty: document.getElementById('menu-difficulty').value,
+                    roomCode: document.getElementById('menu-room-code').value.trim(),
+                    isNewGame: true
+                };
+                localStorage.setItem('ajedrezConfig', JSON.stringify(config));
+                window.location.href = '/game/';
+            });
+
+            btnContinue.addEventListener('click', () => {
+                const config = JSON.parse(localStorage.getItem('ajedrezConfig') || '{}');
+                config.isNewGame = false;
+                localStorage.setItem('ajedrezConfig', JSON.stringify(config));
+                window.location.href = '/game/';
+            });
+        });
+    </script>
 </body>
 </html>

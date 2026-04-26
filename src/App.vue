@@ -2,11 +2,11 @@
     <!-- ===== NAVBAR ===== -->
     <nav class="navbar navbar-expand navbar-dark bg-dark shadow-sm py-1">
         <div class="container-fluid px-2 px-md-4">
-            <a class="navbar-brand fw-bold fs-6 m-0" href="/menu.html">♟️ Ajedrez Pro</a>
+            <a class="navbar-brand fw-bold fs-6 m-0" href="/">♟️ Ajedrez Pro</a>
             <div class="d-flex align-items-center gap-2">
                 <button id="theme-toggle" class="btn btn-outline-secondary btn-sm border-0" title="Cambiar Tema">🌓</button>
                 <button id="restart-btn" class="btn btn-warning btn-sm fw-bold px-3 rounded-pill shadow-sm">Reiniciar</button>
-                <a href="/menu.html" class="btn btn-danger btn-sm fw-bold px-3 rounded-pill shadow-sm">Salir</a>
+                <a href="/" class="btn btn-danger btn-sm fw-bold px-3 rounded-pill shadow-sm">Salir</a>
             </div>
         </div>
     </nav>
@@ -73,7 +73,7 @@
                     <h4 id="game-over-message" class="mb-0 fw-bold">¡Ganan las Blancas!</h4>
                 </div>
                 <div class="modal-footer border-0 justify-content-center bg-light rounded-bottom-4">
-                    <a href="/menu" class="btn btn-outline-secondary fw-bold rounded-pill">Ir al Menú</a>
+                    <a href="/" class="btn btn-outline-secondary fw-bold rounded-pill">Ir al Menú</a>
                     <button type="button" class="btn btn-primary fw-bold rounded-pill px-4" id="modal-restart-btn">Jugar de Nuevo</button>
                 </div>
             </div>
