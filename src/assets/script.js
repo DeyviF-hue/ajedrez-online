@@ -1073,53 +1073,64 @@ function bindDOMElements() {
     promotionOptionsEl = document.getElementById('promotion-options');
 
     // Registrar eventos de botones
-    suggestBtn.addEventListener('click', () => {
-        if (isGameOver || isPaused || pendingPromotion || isOnline) return;
-        statusEl.textContent = 'Calculando sugerencia...';
-        setTimeout(() => {
-            const depth = 3; // Profundidad fija para sugerencias
-            const res = getBestMove(board, depth, currentTurn, positionHistory);
-            if (res && res.move) {
-                selectedSquare = res.move.from;
-                validMoves = [res.move.to];
-                renderBoard();
-                statusEl.textContent = 'Sugerencia lista.';
-                setTimeout(() => updateStatus(), 2000);
-            }
-        }, 50);
-    });
+    if (chatSendBtn) {
+        chatSendBtn.addEventListener('click', sendChatMessage);
+    }
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+    }
 
-    pauseBtn.addEventListener('click', () => {
-        if (isGameOver) return;
-        isPaused = !isPaused;
-        pauseBtn.innerHTML = isPaused ? '▶️ Reanudar Juego' : '⏸️ Pausar Juego';
-        pauseBtn.classList.toggle('btn-success', isPaused);
-        pauseBtn.classList.toggle('btn-warning', !isPaused);
-        updateStatus();
-        if (!isPaused) checkAITurn();
-    });
+    if (suggestBtn) {
+        suggestBtn.addEventListener('click', () => {
+            if (isGameOver || isPaused || pendingPromotion || isOnline) return;
+            statusEl.textContent = 'Calculando sugerencia...';
+            setTimeout(() => {
+                const depth = 3; // Profundidad fija para sugerencias
+                const res = getBestMove(board, depth, currentTurn, positionHistory);
+                if (res && res.move) {
+                    selectedSquare = res.move.from;
+                    validMoves = [res.move.to];
+                    renderBoard();
+                    statusEl.textContent = 'Sugerencia lista.';
+                    setTimeout(() => updateStatus(), 2000);
+                }
+            }, 50);
+        });
+    }
 
-    flipBtn.addEventListener('click', () => {
-        // En online, solo rotamos visualmente el tablero. 
-        // En local/PvA, cambiamos el color del jugador (cambia de bando).
-        myColor = myColor === 'w' ? 'b' : 'w';
-        renderAll();
-        if (!isOnline && !isGameOver && !isPaused) checkAITurn();
-        saveState();
-    });
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+            if (isGameOver) return;
+            isPaused = !isPaused;
+            pauseBtn.innerHTML = isPaused ? '▶️ Reanudar Juego' : '⏸️ Pausar Juego';
+            pauseBtn.classList.toggle('btn-success', isPaused);
+            pauseBtn.classList.toggle('btn-warning', !isPaused);
+            updateStatus();
+            if (!isPaused) checkAITurn();
+        });
+    }
 
-    chatSendBtn.addEventListener('click', sendChatMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendChatMessage();
-    });
+    if (flipBtn) {
+        flipBtn.addEventListener('click', () => {
+            myColor = myColor === 'w' ? 'b' : 'w';
+            renderAll();
+            if (!isOnline && !isGameOver && !isPaused) checkAITurn();
+            saveState();
+        });
+    }
 
-    restartBtn.addEventListener('click', () => restartModal.show());
-    confirmRestartBtn.addEventListener('click', () => { restartModal.hide(); resetBoard(); });
-    modalRestartBtn.addEventListener('click', () => { gameOverModal.hide(); resetBoard(); });
-    themeToggleBtn.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-    });
+    if (restartBtn) restartBtn.addEventListener('click', () => restartModal.show());
+    if (confirmRestartBtn) confirmRestartBtn.addEventListener('click', () => { restartModal.hide(); resetBoard(); });
+    if (modalRestartBtn) modalRestartBtn.addEventListener('click', () => { gameOverModal.hide(); resetBoard(); });
+    
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+    }
 }
 
 if (window.vueIsMounted) {

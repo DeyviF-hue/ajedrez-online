@@ -49,7 +49,8 @@ Para ejecutar el proyecto localmente, sigue estos pasos:
    npm install
    ```
 
-3. **Iniciar el servidor (Backend):**
+3. **Iniciar el servidor (Backend) - ¡IMPORTANTE!:**
+   *Este paso es necesario para el modo online y para que la aplicación funcione correctamente.*
    ```bash
    node server/index.js
    ```
@@ -58,6 +59,15 @@ Para ejecutar el proyecto localmente, sigue estos pasos:
    ```bash
    npm run dev
    ```
+
+---
+
+## 🛠️ Solución de Problemas (FAQ)
+
+**¿Por qué el tablero se ve vacío o marrón?**
+Esto suele ocurrir por dos razones:
+1. **JS Crash**: Asegúrate de que todos los elementos de la interfaz se hayan cargado correctamente. He añadido protecciones en el código para evitar que esto suceda.
+2. **Servidor Offline**: Si intentas jugar en modo Online sin el servidor de Node.js corriendo, el juego esperará la conexión. Asegúrate de ejecutar `node server/index.js`.
 
 ---
 
