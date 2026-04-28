@@ -73,7 +73,15 @@ Esto suele ocurrir por dos razones:
 
 ## 📸 Capturas de Pantalla
 
-*(Próximamente: Añade aquí tus mejores capturas del juego para que el repo destaque)*
+<div align="center">
+  <img src="screenshots/landing.png" alt="Menú Principal" width="600" />
+  <br />
+  <em>Interfaz de inicio con diseño premium</em>
+  <br /><br />
+  <img src="screenshots/gameplay.png" alt="Gameplay" width="600" />
+  <br />
+  <em>Tablero de juego con motor de IA y Chat Online</em>
+</div>
 
 ---
 
