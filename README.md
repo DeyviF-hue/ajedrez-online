@@ -1,5 +1,78 @@
-# Vue 3 + Vite
+# ♟️ Ajedrez Pro - Multiplayer & IA
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+<div align="center">
+  <img src="https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D" alt="Vue.js" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="Socket.io" />
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3" />
+</div>
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+<br />
+
+**Ajedrez Pro** es una plataforma de ajedrez moderna y sofisticada diseñada para ofrecer una experiencia competitiva tanto contra oponentes reales como contra una inteligencia artificial avanzada. Con un enfoque en la estética *premium* y la jugabilidad fluida.
+
+---
+
+## 🚀 Características Principales
+
+| Característica | Descripción |
+| :--- | :--- |
+| **🌐 Multijugador Online** | Juega en tiempo real con amigos mediante códigos de sala privados. |
+| **🤖 IA Adaptativa** | Motor de ajedrez basado en Minimax con 5 niveles de dificultad progresivos. |
+| **🏆 Liga de Campeones** | Modo torneo donde desbloqueas niveles derrotando a la computadora. |
+| **💬 Chat Integrado** | Comunicación fluida durante las partidas online para una experiencia social. |
+| **💎 UI/UX Premium** | Interfaz con efectos de *glassmorphism*, animaciones suaves y modo oscuro. |
+
+---
+
+## 🛠️ Stack Tecnológico
+
+- **Frontend**: Vue.js 3, Vite, CSS Vanilla (Custom Design).
+- **Backend**: Node.js, Express.
+- **Comunicación**: Socket.io para sincronización de estados y chat.
+- **Lógica**: Algoritmo Minimax con poda Alfa-Beta para la IA.
+
+---
+
+## 🔧 Instalación y Uso
+
+Para ejecutar el proyecto localmente, sigue estos pasos:
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/DeyviF-hue/ajedrez-online.git
+   cd ajedrez-online
+   ```
+
+2. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
+
+3. **Iniciar el servidor (Backend):**
+   ```bash
+   node server/index.js
+   ```
+
+4. **Iniciar la aplicación (Frontend):**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 📸 Capturas de Pantalla
+
+*(Próximamente: Añade aquí tus mejores capturas del juego para que el repo destaque)*
+
+---
+
+## ✒️ Autor
+
+Proyecto desarrollado con ❤️ por **Deyvi**.
+
+---
+
+<div align="center">
+  <p>¿Tienes alguna sugerencia o encontraste un bug? ¡Siéntete libre de abrir un issue!</p>
+</div>
