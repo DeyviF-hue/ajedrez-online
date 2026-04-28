@@ -392,60 +392,71 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        .info-bar.fade-out {
-            opacity: 0.2;
+        /* =======================================================
+           INFO CARD FLOTANTE (Glassmorphism)
+        ======================================================== */
+        .info-card-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            z-index: 1000;
+            animation: slideInRight 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
-        .info-bar:hover {
-            opacity: 1 !important;
-            transform: translateX(-50%) translateY(-5px);
-            background: rgba(30, 30, 50, 0.8);
-            border-color: var(--primary-glow);
+        .info-card {
+            background: rgba(15, 15, 25, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #fff;
+            position: relative;
+            transition: all 0.3s ease;
         }
 
-        .info-bar .info-icon {
-            font-size: 1.2rem;
-            animation: iconWiggle 3s ease-in-out infinite;
+        .info-card:hover {
+            background: rgba(20, 20, 35, 0.9);
+            transform: translateY(-5px);
+            border-color: var(--primary-glow) !important;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4) !important;
         }
 
-        .info-bar .info-text {
-            color: #e0e0e0;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin: 0;
-            white-space: nowrap;
-        }
-
-        .info-bar .close-info {
+        .info-card .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 12px;
             background: none;
             border: none;
-            color: #8b92a5;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
             cursor: pointer;
-            padding: 0;
-            font-size: 0.9rem;
             transition: color 0.3s;
         }
 
-        .info-bar .close-info:hover {
+        .info-card .close-btn:hover {
             color: var(--accent-neon);
         }
 
-        @keyframes iconWiggle {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(10deg); }
-            75% { transform: rotate(-10deg); }
+        @keyframes slideInRight {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        @media (max-width: 576px) {
-            .info-bar {
-                bottom: 60px; /* Un poco más arriba para no chocar con el badge de versión si este baja */
-                width: 85%;
-                padding: 8px 15px;
-            }
-            .info-bar .info-text {
-                font-size: 0.75rem;
-                white-space: normal;
-                text-align: center;
+        @keyframes slideInUp {
+            from { transform: translate(-50%, 50px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .info-card-container {
+                top: auto;
+                bottom: 20px;
+                right: auto;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                animation: slideInUp 0.8s ease forwards;
             }
         }
 
@@ -458,11 +469,21 @@
         <span class="d-text">• by Deyvi</span>
     </div>
 
-    <!-- Barra informativa UX -->
-    <div class="info-bar" id="infoBar">
-        <span class="info-icon">✨</span>
-        <p class="info-text">Esta app fue creada para experimentar con nuevas formas de jugar ajedrez • by Deyvi</p>
-        <button class="close-info" id="closeInfo">✕</button>
+    <!-- Info Card Flotante -->
+    <div id="info-card" class="info-card-container d-none">
+        <div class="info-card shadow-lg p-3 rounded-4 border">
+            <button id="close-info-btn" class="close-btn">✕</button>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge-beta">INFO</span>
+                <h6 class="m-0 fw-black text-primary small" style="letter-spacing: 1px;">SISTEMA PRO</h6>
+            </div>
+            <p class="small text-muted mb-2 lh-sm">
+                Disfruta de IA avanzada, multijugador online y un modo Liga progresivo diseñado para desafiar tus límites.
+            </p>
+            <div class="border-top pt-2 mt-2">
+                <p class="smaller text-muted mb-0 opacity-50" style="font-size: 0.65rem;">Diseñado por <span class="text-primary fw-bold">Deyvi</span></p>
+            </div>
+        </div>
     </div>
     
     <div class="container px-3 py-5">
@@ -483,6 +504,7 @@
                                 <div class="input-group-custom">
                                     <select class="form-select select-modern" id="menu-mode">
                                         <option value="pva">👤 Jugador vs 🤖 IA</option>
+                                        <option value="league">🏆 Liga de Campeones</option>
                                         <option value="pvp">👤 2 Jugadores (Local)</option>
                                         <option value="online">🌐 Multijugador Online</option>
                                         <option value="ava">🤖 IA vs 🤖 IA (Espectador)</option>
@@ -545,28 +567,27 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const infoBar = document.getElementById('infoBar');
-            const closeInfo = document.getElementById('closeInfo');
+            // Info Card Logic (Elegante)
+            const infoCard = document.getElementById('info-card');
+            const closeInfoBtn = document.getElementById('close-info-btn');
 
-            // La barra informativa empieza oculta (display: none se maneja en el CSS o al inicio)
-            infoBar.style.display = 'none';
-
-            closeInfo.addEventListener('click', () => {
-                infoBar.style.display = 'none';
-            });
-
-            // Al hacer clic en el badge de versión, mostrar la info bar
-            const versionBadge = document.getElementById('versionBadge');
-            versionBadge.addEventListener('click', () => {
-                infoBar.style.display = 'flex';
-                infoBar.classList.remove('fade-out');
-                infoBar.classList.add('visible');
-                
-                // Reiniciar el auto-ocultamiento
+            if (infoCard && closeInfoBtn) {
+                // Mostrar con animación después de un pequeño delay
                 setTimeout(() => {
-                    infoBar.classList.add('fade-out');
-                }, 5000);
-            });
+                    infoCard.classList.remove('d-none');
+                }, 1200);
+
+                // Auto atenuación después de unos segundos para no distraer
+                setTimeout(() => {
+                    if (infoCard) infoCard.style.opacity = '0.7';
+                }, 10000);
+
+                closeInfoBtn.addEventListener('click', () => {
+                    infoCard.style.opacity = '0';
+                    infoCard.style.transform = 'translateX(50px)';
+                    setTimeout(() => infoCard.remove(), 500);
+                });
+            }
 
             // Animación de auto-ocultamiento del badge
             setTimeout(() => {
@@ -603,9 +624,68 @@
                 } else if (e.target.value === 'online') {
                     diffContainer.classList.add('d-none');
                     roomCodeContainer.classList.remove('d-none');
-                    // Solo el que crea la sala define el tiempo, el que se une lo recibe del server, pero lo simplificamos aquí dejando el selector visible para el creador
+                } else if (e.target.value === 'league') {
+                    renderLeague();
+                    const leagueModal = new bootstrap.Modal(document.getElementById('leagueModal'));
+                    leagueModal.show();
+                    modeSelect.value = 'pva'; // Reset focus
                 }
             });
+
+            const leagueLevels = [
+                { id: 2, name: "Escudero", label: "Fácil", emoji: "🟢", desc: "IA básica para aprender." },
+                { id: 3, name: "Caballero", label: "Medio", emoji: "🟡", desc: "IA táctica y sólida." },
+                { id: 4, name: "Comendador", label: "Difícil", emoji: "🔴", desc: "Nivel Gran Maestro." },
+                { id: 5, name: "Inquisidor", label: "Experto", emoji: "🔥", desc: "IA avanzada y letal." },
+                { id: 6, name: "Dios del Ajedrez", label: "Dios", emoji: "👑", desc: "El reto definitivo." }
+            ];
+
+            function renderLeague() {
+                const list = document.getElementById('league-levels-list');
+                const unlocked = parseInt(localStorage.getItem('chessLeagueProgress') || '0');
+                list.innerHTML = '';
+                
+                leagueLevels.forEach((lvl, index) => {
+                    const isLocked = index > unlocked;
+                    const isCompleted = index < unlocked;
+                    const isCurrent = index === unlocked;
+                    
+                    const card = document.createElement('div');
+                    card.className = `p-3 rounded-4 d-flex align-items-center justify-content-between transition-all ${isLocked ? 'opacity-50' : 'available-level'}`;
+                    card.style.background = isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)';
+                    card.style.border = isCurrent ? '2px solid var(--bs-primary)' : '1px solid rgba(255,255,255,0.1)';
+                    
+                    card.innerHTML = `
+                        <div class="d-flex align-items-center gap-3 text-start">
+                            <div class="fs-3">${isLocked ? '🔒' : lvl.emoji}</div>
+                            <div>
+                                <h6 class="mb-0 fw-bold ${isLocked ? 'text-muted' : 'text-white'}">${lvl.name}</h6>
+                                <small class="text-muted" style="font-size:0.7rem;">${isLocked ? 'Gana el nivel anterior para desbloquear' : lvl.desc}</small>
+                            </div>
+                        </div>
+                        ${isCompleted ? '<span class="text-success small fw-bold">✔️ COMPLETADO</span>' : 
+                          isLocked ? '' : `<button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold play-lvl-btn" data-idx="${index}">▶ JUGAR</button>`}
+                    `;
+                    
+                    if (!isLocked && !isCompleted) {
+                        card.querySelector('.play-lvl-btn').onclick = () => {
+                            const config = {
+                                mode: 'league',
+                                time: '10',
+                                difficulty: lvl.id,
+                                leagueLevelIdx: index,
+                                leagueLevelName: lvl.name,
+                                isNewGame: true
+                            };
+                            localStorage.setItem('ajedrezConfig', JSON.stringify(config));
+                            localStorage.removeItem('ajedrezState');
+                            window.location.href = '/game/';
+                        };
+                    }
+                    
+                    list.appendChild(card);
+                });
+            }
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -638,5 +718,26 @@
             });
         });
     </script>
+
+    <!-- Modal Liga de Campeones -->
+    <div class="modal fade" id="leagueModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content main-card border-0 shadow-lg" style="background: rgba(20, 20, 35, 0.98); border: 1px solid rgba(255,255,255,0.1) !important;">
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h4 class="modal-title fw-black text-primary" style="letter-spacing: 2px;">🏆 LIGA DE CAMPEONES</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-4 text-uppercase fw-bold" style="letter-spacing: 1px; opacity: 0.7;">Supera los desafíos para ascender al Olimpo.</p>
+                    <div id="league-levels-list" class="d-flex flex-column gap-3">
+                        <!-- Se generará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

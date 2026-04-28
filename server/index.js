@@ -119,6 +119,22 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Chat de sala
+    socket.on('sendMessage', (data) => {
+        const { roomId, message, sender } = data;
+        if (!roomId || !message) return;
+        
+        // Limitar longitud del mensaje
+        const cleanMessage = message.trim().substring(0, 150);
+        if (cleanMessage.length === 0) return;
+
+        io.to(roomId).emit('receiveMessage', {
+            message: cleanMessage,
+            sender: sender,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+    });
+
     socket.on('disconnect', () => {
         console.log('Usuario desconectado:', socket.id);
         // Buscar si el usuario estaba en alguna sala

@@ -144,9 +144,10 @@ function minimax(board, depth, alpha, beta, isMaximizing, currentColor) {
  * @param {Array} board - El tablero 8x8.
  * @param {Number} depth - La profundidad de búsqueda (dificultad).
  * @param {String} color - 'w' o 'b'.
+ * @param {Array} history - El historial de posiciones (opcional).
  * @returns {Object} - { move: {from, to}, score: Number }
  */
-export function getBestMove(board, depth, color) {
+export function getBestMove(board, depth, color, history = []) {
     const isMaximizing = color === 'w';
     const moves = getAllLegalMoves(color, board);
     
@@ -170,7 +171,19 @@ export function getBestMove(board, depth, color) {
 
     for (const move of moves) {
         const simData = applyMoveSim(board, move);
-        const score = minimax(board, depth - 1, alpha, beta, !isMaximizing, nextColor);
+        
+        // Penalización por repetición (evitar bucles infinitos)
+        const currentHash = JSON.stringify(board);
+        const repetitions = history.filter(h => h === currentHash).length;
+        // Si ya ocurrió 1 vez, penalizamos. Si ocurrió 2, es empate inminente (evitar si ganamos).
+        const penalty = repetitions * 50; 
+
+        let score = minimax(board, depth - 1, alpha, beta, !isMaximizing, nextColor);
+        
+        // Aplicar penalización según quién esté moviendo
+        if (isMaximizing) score -= penalty;
+        else score += penalty;
+
         undoMoveSim(board, move, simData);
 
         if (isMaximizing) {

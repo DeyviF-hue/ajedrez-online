@@ -2,7 +2,7 @@
     <!-- ===== NAVBAR ===== -->
     <nav class="navbar navbar-expand navbar-dark bg-dark shadow-sm py-1">
         <div class="container-fluid px-2 px-md-4">
-            <a class="navbar-brand fw-bold fs-6 m-0" href="/">♟️ Ajedrez Pro</a>
+            <a class="navbar-brand fw-bold fs-6 m-0" href="/">♟️ Ajedrez Pro <span id="league-badge" class="badge-beta d-none ms-2" style="font-size: 0.6rem;"></span></a>
             <div class="d-flex align-items-center gap-2">
                 <button id="theme-toggle" class="btn btn-outline-secondary btn-sm border-0" title="Cambiar Tema">🌓</button>
                 <button id="restart-btn" class="btn btn-warning btn-sm fw-bold px-3 rounded-pill shadow-sm">Reiniciar</button>
@@ -63,11 +63,22 @@
                     <div class="card-body d-flex flex-column gap-3 p-3">
                         <div class="d-flex gap-2">
                             <button id="pause-btn" class="btn btn-warning fw-bold flex-grow-1 rounded-pill shadow-sm">⏸️ Pausar</button>
+                            <button id="flip-btn" class="btn btn-secondary fw-bold px-3 rounded-pill shadow-sm" title="Rotar Tablero">🔄</button>
                             <button id="suggest-btn" class="btn btn-info text-white fw-bold px-4 rounded-pill shadow-sm">💡 Sugerir</button>
                         </div>
-                        <div class="d-flex flex-column flex-grow-1 bg-body rounded-3 shadow-sm border p-2">
-                            <h6 class="fw-bold text-muted text-uppercase small mb-2 px-1 border-bottom pb-2">Historial de Movimientos</h6>
+                        <div class="d-flex flex-column flex-grow-1 bg-body rounded-3 shadow-sm border p-2 overflow-hidden" style="min-height: 200px;">
+                            <h6 class="fw-bold text-muted text-uppercase small mb-2 px-1 border-bottom pb-2">Historial</h6>
                             <div id="move-history" class="move-history flex-grow-1 px-1"></div>
+                        </div>
+
+                        <!-- Chat Online -->
+                        <div id="chat-container" class="d-flex flex-column bg-body rounded-3 shadow-sm border p-2 d-none" style="height: 250px;">
+                            <h6 class="fw-bold text-muted text-uppercase small mb-2 px-1 border-bottom pb-2">Chat Online</h6>
+                            <div id="chat-messages" class="flex-grow-1 overflow-auto px-1 mb-2" style="font-size: 0.85rem;"></div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="chat-input" class="form-control border-end-0" placeholder="Escribe un mensaje...">
+                                <button id="chat-send-btn" class="btn btn-primary px-3">Enviar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -78,17 +89,23 @@
 
     <!-- ===== MODALES ===== -->
     <div class="modal fade" id="gameOverModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content shadow-lg border-0 rounded-4">
-                <div class="modal-header bg-primary text-white border-0 rounded-top-4">
-                    <h5 class="modal-title fw-bold" id="game-over-title">Fin de la Partida</h5>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <h4 id="game-over-message" class="mb-0 fw-bold">¡Ganan las Blancas!</h4>
-                </div>
-                <div class="modal-footer border-0 justify-content-center bg-light rounded-bottom-4">
-                    <a href="/" class="btn btn-outline-secondary fw-bold rounded-pill">Ir al Menú</a>
-                    <button type="button" class="btn btn-primary fw-bold rounded-pill px-4" id="modal-restart-btn">Jugar de Nuevo</button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content game-over-content shadow-2xl border-0 rounded-5 overflow-hidden">
+                <div class="modal-body text-center p-5">
+                    <div class="trophy-container mb-4">
+                        <span class="display-1 trophy-icon">🏆</span>
+                    </div>
+                    <h5 class="text-uppercase letter-spacing-2 text-muted small mb-2 fw-bold" id="game-over-title">FIN DE LA PARTIDA</h5>
+                    <h1 id="game-over-message" class="display-5 fw-black mb-4 gradient-text">¡Ganan las Blancas!</h1>
+                    
+                    <div class="d-flex flex-column gap-2 mt-4">
+                        <button type="button" class="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm py-3" id="modal-restart-btn">
+                            🎮 Jugar de Nuevo
+                        </button>
+                        <a href="/" class="btn btn-link text-decoration-none text-muted fw-bold">
+                            Volver al Menú Principal
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,6 +135,28 @@
                 <div class="modal-body text-center bg-body-tertiary py-4">
                     <p class="small text-muted mb-3 fw-bold">Elige tu nueva pieza:</p>
                     <div class="d-flex justify-content-center gap-3" id="promotion-options"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="sideChoiceModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-dark text-white border-0 py-2 text-center">
+                    <h6 class="modal-title m-0 fw-bold w-100">Elige tu Bando</h6>
+                </div>
+                <div class="modal-body text-center bg-body-tertiary py-4">
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-light border p-3 rounded-4 shadow-sm" id="choose-white-btn" style="width: 100px;">
+                            <div class="fs-1">⚪</div>
+                            <div class="small fw-bold">Blancas</div>
+                        </button>
+                        <button class="btn btn-dark p-3 rounded-4 shadow-sm" id="choose-black-btn" style="width: 100px;">
+                            <div class="fs-1">⚫</div>
+                            <div class="small fw-bold">Negras</div>
+                        </button>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm mt-4 rounded-pill px-3" id="choose-random-btn">🎲 Aleatorio</button>
                 </div>
             </div>
         </div>

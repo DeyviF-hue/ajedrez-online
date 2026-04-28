@@ -34,6 +34,8 @@ let isGameOver = false;
 let lastMove = null;
 let isPaused = false;
 let animationData = null;
+let positionHistory = []; // Para detectar triple repetición
+let fiftyMoveCounter = 0; // Para la regla de los 50 movimientos
 
 // Configuración leída de menu.html
 let config = { mode: 'pva', time: '10', difficulty: '3', isNewGame: true, roomCode: '' };
@@ -62,9 +64,10 @@ let pendingPromotion = null; // Guarda los datos del movimiento mientras se mues
 // Estas variables se inicializan cuando Vue ya ha montado el DOM (evento 'vue-mounted')
 let boardEl, statusEl, historyEl, evalBarFill, evalText, globalTimerEl;
 let capturedWhiteEl, capturedBlackEl;
-let themeToggleBtn, restartBtn, pauseBtn, suggestBtn;
+let themeToggleBtn, restartBtn, pauseBtn, suggestBtn, flipBtn;
 let confirmRestartBtn, modalRestartBtn, promotionOptionsEl;
-let gameOverModal, restartModal, promotionModal;
+let gameOverModal, restartModal, promotionModal, sideChoiceModal;
+let chatContainer, chatMessages, chatInput, chatSendBtn;
 
 
 // =========================================================================
@@ -75,6 +78,7 @@ function initModals() {
     gameOverModal = new bootstrap.Modal(document.getElementById('gameOverModal'));
     restartModal = new bootstrap.Modal(document.getElementById('restartModal'));
     promotionModal = new bootstrap.Modal(document.getElementById('promotionModal'));
+    sideChoiceModal = new bootstrap.Modal(document.getElementById('sideChoiceModal'));
 }
 
 function initAudio() {
@@ -92,20 +96,27 @@ function initGame() {
     initModals();
 
     // Leer configuración
-    config = JSON.parse(localStorage.getItem('ajedrezConfig') || '{"mode":"pva", "time":"10", "difficulty":"3", "isNewGame":true, "roomCode":""}');
+    config = JSON.parse(localStorage.getItem('ajedrezConfig') || '{"mode":"pva", "time":"10", "difficulty":"3", "color":"w", "isNewGame":true, "roomCode":""}');
     isOnline = config.mode === 'online';
 
     if (isOnline) {
         if (suggestBtn) suggestBtn.style.display = 'none';
         initSocketConnection();
-        return; // Detiene el flujo normal hasta que el server responda
+        return; 
+    } else {
+        if (suggestBtn) suggestBtn.style.display = 'block';
     }
 
     timeLimit = parseInt(config.time) * 60;
 
     if (config.isNewGame) {
-        resetBoard();
-        // Cambiar flag para que un F5 no vuelva a resetear
+        // En modos offline, pedimos bando antes de empezar
+        if (!isOnline && config.mode !== 'ava') {
+            resetBoard(true); // resetBoard(true) evitará iniciar el timer/IA
+            sideChoiceModal.show();
+        } else {
+            resetBoard();
+        }
         config.isNewGame = false;
         localStorage.setItem('ajedrezConfig', JSON.stringify(config));
     } else {
@@ -115,6 +126,20 @@ function initGame() {
             startTimer();
             checkAITurn();
         }
+    }
+
+    if (config.mode === 'league') {
+        const badge = document.getElementById('league-badge');
+        if (badge) {
+            badge.classList.remove('d-none');
+            badge.textContent = `LIGA: ${config.leagueLevelName || 'Nivel'}`;
+        }
+    }
+
+    // Mostrar/Ocultar Chat
+    if (chatContainer) {
+        if (isOnline) chatContainer.classList.remove('d-none');
+        else chatContainer.classList.add('d-none');
     }
 
     setupTheme();
@@ -172,6 +197,10 @@ function initSocketConnection() {
     socket.on('opponentDisconnected', (data) => {
         statusEl.textContent = data.message;
         isGameOver = true;
+    });
+
+    socket.on('receiveMessage', (data) => {
+        appendMessage(data.sender, data.message, data.time);
     });
 }
 
@@ -237,6 +266,8 @@ function initNewGameLocal() {
     scores = { w: 0, b: 0 };
     isGameOver = false;
     isPaused = false;
+    positionHistory = [];
+    fiftyMoveCounter = 0;
     timeLimit = parseInt(config.time) * 60;
     globalTimeLeft = timeLimit;
     lastMove = null;
@@ -250,7 +281,7 @@ function initNewGameLocal() {
     renderHistory();
 }
 
-function resetBoard() {
+function resetBoard(isWaitingForSide = false) {
     board = INITIAL_BOARD.map(row => [...row]);
     currentTurn = 'w';
     moveHistory = [];
@@ -261,10 +292,57 @@ function resetBoard() {
     lastMove = null;
     isGameOver = false;
     isPaused = false;
+    positionHistory = [];
+    fiftyMoveCounter = 0;
     
     globalTimeLeft = timeLimit;
     pauseBtn.innerHTML = "⏸️ Pausar Juego";
     
+    saveState();
+    renderAll();
+    
+    if (!isWaitingForSide) {
+        startTimer();
+        checkAITurn();
+    }
+}
+
+function sendChatMessage() {
+    if (!isOnline || !currentRoomId || !chatInput) return;
+    const msg = chatInput.value.trim();
+    if (msg.length === 0) return;
+    
+    socket.emit('sendMessage', {
+        roomId: currentRoomId,
+        message: msg,
+        sender: myColor === 'w' ? 'Blancas' : 'Negras'
+    });
+    
+    chatInput.value = '';
+}
+
+function appendMessage(sender, message, time) {
+    if (!chatMessages) return;
+    
+    const msgEl = document.createElement('div');
+    msgEl.className = 'mb-1';
+    
+    const isMe = sender === (myColor === 'w' ? 'Blancas' : 'Negras');
+    const colorClass = isMe ? 'text-primary' : 'text-danger';
+    
+    msgEl.innerHTML = `
+        <span class="text-muted small">[${time}]</span>
+        <strong class="${colorClass}">${sender}:</strong>
+        <span>${message}</span>
+    `;
+    
+    chatMessages.appendChild(msgEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function selectSide(color) {
+    myColor = color;
+    sideChoiceModal.hide();
     saveState();
     renderAll();
     startTimer();
@@ -287,7 +365,7 @@ function renderAll() {
 function saveState() {
     const state = {
         board, currentTurn, moveHistory, capturedPieces,
-        scores, isGameOver, lastMove, globalTimeLeft
+        scores, isGameOver, lastMove, globalTimeLeft, myColor
     };
     localStorage.setItem('ajedrezState', JSON.stringify(state));
 }
@@ -305,6 +383,7 @@ function loadState() {
             isGameOver = state.isGameOver || false;
             lastMove = state.lastMove || null;
             globalTimeLeft = state.globalTimeLeft !== undefined ? state.globalTimeLeft : timeLimit;
+            myColor = state.myColor || 'w';
         } catch (e) {
             console.error("Error loading state", e);
         }
@@ -317,6 +396,14 @@ function loadState() {
 
 function renderBoard() {
     boardEl.innerHTML = '';
+    
+    // Aplicar rotación visual si el jugador es negras
+    if (myColor === 'b') {
+        boardEl.classList.add('black-view');
+    } else {
+        boardEl.classList.remove('black-view');
+    }
+
     let isKingInCheck = { w: false, b: false };
     if (isInCheck('w', board)) isKingInCheck.w = true;
     if (isInCheck('b', board)) isKingInCheck.b = true;
@@ -345,7 +432,7 @@ function renderBoard() {
                 pieceEl.classList.add(color === 'w' ? 'white-piece' : 'black-piece');
                 pieceEl.textContent = PIECES[color][type];
                 
-                const isHumanTurn = !isGameOver && !isPaused && (config.mode === 'pvp' || (config.mode === 'pva' && currentTurn === 'w'));
+                const isHumanTurn = !isGameOver && !isPaused && (config.mode === 'pvp' || (config.mode !== 'ava' && currentTurn === myColor));
                 pieceEl.draggable = isHumanTurn && (color === currentTurn);
                 
                 pieceEl.dataset.row = r;
@@ -393,6 +480,27 @@ function updateStatus() {
     
     const isCheck = isInCheck(currentTurn, board);
     const hasMoves = hasAnyLegalMoves(currentTurn);
+
+    // Detectar Triple Repetición
+    const currentHash = JSON.stringify(board);
+    const repetitions = positionHistory.filter(h => h === currentHash).length;
+
+    if (repetitions >= 3) {
+        isGameOver = true;
+        clearInterval(timerInterval);
+        statusEl.textContent = "Empate por repetición";
+        showGameOver("Nadie", false, "Empate por triple repetición");
+        return;
+    }
+
+    // Detectar Regla de los 50 movimientos (100 medios movimientos)
+    if (fiftyMoveCounter >= 100) {
+        isGameOver = true;
+        clearInterval(timerInterval);
+        statusEl.textContent = "Empate (50 movimientos)";
+        showGameOver("Nadie", false, "Empate por regla de los 50 movimientos");
+        return;
+    }
 
     if (!hasMoves) {
         isGameOver = true;
@@ -455,8 +563,31 @@ function renderCapturedPieces() {
 
 function showGameOver(winner, isMate, reason = "") {
     playSound('gameEnd');
-    document.getElementById('game-over-title').textContent = isMate ? "¡Jaque Mate!" : "Tablas";
-    document.getElementById('game-over-message').textContent = isMate ? `¡Ganan las ${winner}!` : reason;
+    const titleEl = document.getElementById('game-over-title');
+    const messageEl = document.getElementById('game-over-message');
+    const trophyEl = document.querySelector('.trophy-icon');
+    
+    titleEl.textContent = isMate ? "¡Jaque Mate!" : "FIN DE LA PARTIDA";
+    messageEl.textContent = isMate ? `¡Ganan las ${winner}!` : reason;
+    
+    if (trophyEl) {
+        trophyEl.textContent = isMate ? '🏆' : '🤝';
+    }
+    
+    // Lógica de Liga: Desbloquear siguiente nivel
+    if (config.mode === 'league' && isMate) {
+        // El jugador gana si es mate y el perdedor es el color contrario al suyo
+        const playerWon = winner === (myColor === 'w' ? 'Blancas' : 'Negras');
+        if (playerWon) {
+            const currentLvlIdx = parseInt(config.leagueLevelIdx || '0');
+            const unlocked = parseInt(localStorage.getItem('chessLeagueProgress') || '0');
+            if (currentLvlIdx === unlocked) {
+                localStorage.setItem('chessLeagueProgress', (unlocked + 1).toString());
+                messageEl.textContent += " ¡NUEVO NIVEL DESBLOQUEADO! 🔓";
+            }
+        }
+    }
+    
     gameOverModal.show();
 }
 
@@ -521,7 +652,7 @@ function handleSquareClick(r, c) {
     if (isOnline) {
         if (myColor !== currentTurn) return;
     } else {
-        if (config.mode === 'ava' || (config.mode === 'pva' && currentTurn === 'b')) return;
+        if (config.mode === 'ava' || ((config.mode === 'pva' || config.mode === 'league') && currentTurn !== myColor)) return;
     }
 
     const piece = board[r][c];
@@ -559,7 +690,7 @@ function handleDragStart(e) {
     if (isOnline) {
         if (myColor !== currentTurn) { e.preventDefault(); return; }
     } else {
-        if (config.mode === 'ava' || (config.mode === 'pva' && currentTurn === 'b')) {
+        if (config.mode === 'ava' || ((config.mode === 'pva' || config.mode === 'league') && currentTurn !== myColor)) {
             e.preventDefault(); return;
         }
     }
@@ -680,6 +811,16 @@ function executeMove(from, to, fromRectForAnimation, promotionPiece = 'q') {
 
     currentTurn = currentTurn === 'w' ? 'b' : 'w';
     
+    // Regla de los 50 movimientos: se resetea si hay captura o movimiento de peón
+    if (isCapture || piece[1] === 'p') {
+        fiftyMoveCounter = 0;
+    } else {
+        fiftyMoveCounter++;
+    }
+
+    // Guardar historial de posiciones para triple repetición
+    positionHistory.push(JSON.stringify(board));
+    
     const isCheck = isInCheck(currentTurn, board);
     if (isCheck) {
         if (!hasAnyLegalMoves(currentTurn)) notation += '#';
@@ -703,10 +844,12 @@ function executeMove(from, to, fromRectForAnimation, promotionPiece = 'q') {
             clone.style.top = fromRectForAnimation.top + 'px';
             clone.style.width = fromRectForAnimation.width + 'px';
             clone.style.height = fromRectForAnimation.height + 'px';
+            if (myColor === 'b') clone.style.transform = 'rotate(180deg)';
             document.body.appendChild(clone);
             
             clone.getBoundingClientRect(); // Reflow
-            clone.style.transform = `translate(${toRect.left - fromRectForAnimation.left}px, ${toRect.top - fromRectForAnimation.top}px)`;
+            const rotation = myColor === 'b' ? 'rotate(180deg)' : '';
+            clone.style.transform = `translate(${toRect.left - fromRectForAnimation.left}px, ${toRect.top - fromRectForAnimation.top}px) ${rotation}`;
             
             setTimeout(() => {
                 clone.remove();
@@ -864,14 +1007,15 @@ function checkAITurn() {
     if (isGameOver || isPaused || pendingPromotion) return;
     if (isOnline) return; // No hay IA en modo online
     
-    const isAITurn = (config.mode === 'ava') || (config.mode === 'pva' && currentTurn === 'b');
+    // El turno de la IA es si el modo es ava (IA vs IA) o si en pva/league el turno NO es del jugador
+    const isAITurn = (config.mode === 'ava') || ((config.mode === 'pva' || config.mode === 'league') && currentTurn !== myColor);
 
     if (isAITurn) {
         const depth = parseInt(config.difficulty);
         statusEl.textContent = "IA Pensando...";
         setTimeout(() => {
             if (isGameOver || isPaused || pendingPromotion) return;
-            const res = getBestMove(board, depth, currentTurn);
+            const res = getBestMove(board, depth, currentTurn, positionHistory);
             if (res && res.move) {
                 const fromRect = getSquareRect(res.move.from.r, res.move.from.c);
                 processMove(res.move.from, res.move.to, fromRect);
@@ -917,6 +1061,13 @@ function bindDOMElements() {
     restartBtn        = document.getElementById('restart-btn');
     pauseBtn          = document.getElementById('pause-btn');
     suggestBtn        = document.getElementById('suggest-btn');
+    flipBtn           = document.getElementById('flip-btn');
+    
+    // Botones del modal de bando
+    document.getElementById('choose-white-btn').onclick = () => selectSide('w');
+    document.getElementById('choose-black-btn').onclick = () => selectSide('b');
+    document.getElementById('choose-random-btn').onclick = () => selectSide(Math.random() < 0.5 ? 'w' : 'b');
+
     confirmRestartBtn = document.getElementById('confirm-restart-btn');
     modalRestartBtn   = document.getElementById('modal-restart-btn');
     promotionOptionsEl = document.getElementById('promotion-options');
@@ -927,7 +1078,7 @@ function bindDOMElements() {
         statusEl.textContent = 'Calculando sugerencia...';
         setTimeout(() => {
             const depth = 3; // Profundidad fija para sugerencias
-            const res = getBestMove(board, depth, currentTurn);
+            const res = getBestMove(board, depth, currentTurn, positionHistory);
             if (res && res.move) {
                 selectedSquare = res.move.from;
                 validMoves = [res.move.to];
@@ -946,6 +1097,20 @@ function bindDOMElements() {
         pauseBtn.classList.toggle('btn-warning', !isPaused);
         updateStatus();
         if (!isPaused) checkAITurn();
+    });
+
+    flipBtn.addEventListener('click', () => {
+        // En online, solo rotamos visualmente el tablero. 
+        // En local/PvA, cambiamos el color del jugador (cambia de bando).
+        myColor = myColor === 'w' ? 'b' : 'w';
+        renderAll();
+        if (!isOnline && !isGameOver && !isPaused) checkAITurn();
+        saveState();
+    });
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendChatMessage();
     });
 
     restartBtn.addEventListener('click', () => restartModal.show());
