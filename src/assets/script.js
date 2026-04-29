@@ -432,7 +432,7 @@ function renderBoard() {
                 pieceEl.classList.add(color === 'w' ? 'white-piece' : 'black-piece');
                 pieceEl.textContent = PIECES[color][type];
                 
-                const isHumanTurn = !isGameOver && !isPaused && (config.mode === 'pvp' || (config.mode !== 'ava' && currentTurn === myColor));
+                const isHumanTurn = !isGameOver && !isPaused && (config.mode !== 'ava' && currentTurn === myColor);
                 pieceEl.draggable = isHumanTurn && (color === currentTurn);
                 
                 pieceEl.dataset.row = r;
@@ -753,7 +753,7 @@ function processMove(from, to, fromRectForAnimation, isFromOpponent = false) {
     // Detectar si requiere promoción humana
     if (piece[1] === 'p' && (to.r === 0 || to.r === 7)) {
         // Pausar y pedir promoción si es el humano (y no es el oponente remoto moviendo)
-        if (!isFromOpponent && (config.mode === 'pvp' || (config.mode === 'pva' && currentTurn === 'w') || config.mode === 'online')) {
+        if (!isFromOpponent && ((config.mode === 'pva' && currentTurn === 'w') || config.mode === 'online')) {
             pendingPromotion = { from, to, fromRectForAnimation };
             showPromotionModal(currentTurn);
             return;

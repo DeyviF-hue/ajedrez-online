@@ -505,7 +505,6 @@
                                     <select class="form-select select-modern" id="menu-mode">
                                         <option value="pva">👤 Jugador vs 🤖 IA</option>
                                         <option value="league">🏆 Liga de Campeones</option>
-                                        <option value="pvp">👤 2 Jugadores (Local)</option>
                                         <option value="online">🌐 Multijugador Online</option>
                                         <option value="ava">🤖 IA vs 🤖 IA (Espectador)</option>
                                     </select>
@@ -619,9 +618,7 @@
                 roomCodeContainer.classList.add('d-none');
                 timeContainer.classList.remove('d-none');
 
-                if (e.target.value === 'pvp') {
-                    diffContainer.classList.add('d-none');
-                } else if (e.target.value === 'online') {
+                if (e.target.value === 'online') {
                     diffContainer.classList.add('d-none');
                     roomCodeContainer.classList.remove('d-none');
                 } else if (e.target.value === 'league') {
