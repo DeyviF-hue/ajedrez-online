@@ -81,7 +81,36 @@ body {
     user-select: none;
     border-radius: 4px;
     overflow: hidden;
+    /* Perspectiva: animación suave al cambiar de vista */
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center center;
 }
+
+/* =========================================================
+   PERSPECTIVA POR JUGADOR (se aplica via JS con data-perspective)
+   w = Blancas  → normal  (0°)
+   b = Negras   → 180°
+   r = Rojas    → 90°   (la derecha queda abajo)
+   g = Verdes   → 270°  (la izquierda queda abajo)
+   spectator    → sin rotación
+========================================================= */
+.chessboard3[data-perspective="w"] { transform: rotate(0deg); }
+.chessboard3[data-perspective="b"] { transform: rotate(180deg); }
+.chessboard3[data-perspective="r"] { transform: rotate(90deg); }
+.chessboard3[data-perspective="g"] { transform: rotate(270deg); }
+.chessboard3[data-perspective="spectator"] { transform: rotate(0deg); }
+
+/* Contra-rotar las piezas para que siempre sean legibles */
+.chessboard3[data-perspective="w"]  .piece3 { transform: rotate(0deg); }
+.chessboard3[data-perspective="b"]  .piece3 { transform: rotate(180deg); }
+.chessboard3[data-perspective="r"]  .piece3 { transform: rotate(-90deg); }
+.chessboard3[data-perspective="g"]  .piece3 { transform: rotate(90deg); }
+.chessboard3[data-perspective="spectator"] .piece3 { transform: rotate(0deg); }
+
+/* Contra-rotar también los puntos de movimientos válidos */
+.chessboard3[data-perspective="b"]  .valid-dot3 { transform: rotate(180deg); }
+.chessboard3[data-perspective="r"]  .valid-dot3 { transform: rotate(-90deg); }
+.chessboard3[data-perspective="g"]  .valid-dot3 { transform: rotate(90deg); }
 
 .square3 {
     width: 100%;
@@ -253,3 +282,28 @@ body {
     color:#1a1a2e; font-weight:800; letter-spacing:1px;
     padding:4px 12px; border-radius:20px; font-size:0.72rem;
 }
+
+/* =======================================================
+   PANEL DE PERSPECTIVA — Estado activo de los botones
+======================================================== */
+
+/* Anillo de selección genérico para los botones de perspectiva */
+.perspective-btn {
+    opacity: 0.6;
+    transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+}
+
+.perspective-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* Estado activo: resaltado con anillo dorado */
+.perspective-btn.active {
+    opacity: 1;
+    box-shadow: 0 0 0 2px #ffd700, 0 2px 8px rgba(255,215,0,0.4);
+    transform: translateY(-2px);
+}
+

@@ -265,7 +265,7 @@ function executeMove3(from, to, promoType = 'q') {
     // Notation
     const files = 'abcdefghijklmn';
     const notation = `${piece[1] !== 'p' ? piece[1].toUpperCase() : ''}${isCapture ? 'x' : ''}${files[to.c]}${14 - to.r}${promoNotation}`;
-    moveHistory3.push({ color: piece[0], notation });
+    moveHistory3.push({ color: piece[0], notation, hash: JSON.stringify(board3) });
 
     lastMove3 = { from, to };
 
@@ -349,45 +349,227 @@ function scheduleAITurn3() {
 }
 
 // =========================================================================
-// AI — Simple depth-1 evaluator
+// AI — Strategic Multi-Player Engine v2
+// Features:
+//   · Asymmetric multi-enemy material evaluation
+//   · King safety (proximity + check penalty)
+//   · Mobility bonus
+//   · Center control bonus
+//   · Anti-blunder: simulates best enemy reply before committing
+//   · Anti-loop: board-hash history penalty
+//   · MVV-LVA move ordering (captures first)
+//   · Three personalities: agresivo / defensivo / oportunista
 // =========================================================================
 
+// --- Personality definitions ---
+const AI_STYLES = {
+    w: 'oportunista',
+    b: 'agresivo',
+    r: 'defensivo',
+    g: 'oportunista'
+};
+
+// Personality weight overrides
+const STYLE_WEIGHTS = {
+    agresivo:    { mat: 1.5, kingRisk: 1.0, opp: 2.5, mobility: 0.8, center: 1.0 },
+    defensivo:   { mat: 1.5, kingRisk: 4.0, opp: 0.5, mobility: 1.0, center: 0.5 },
+    oportunista: { mat: 2.0, kingRisk: 2.5, opp: 1.5, mobility: 1.2, center: 1.2 }
+};
+
+// Center region for the 14×14 board (rows/cols 4–9)
+const CENTER_MIN = 4, CENTER_MAX = 9;
+
+/** Returns the next active (non-eliminated) player after `color` */
+function getNextActivePlayer3(color) {
+    let idx = activePlayers.indexOf(color);
+    for (let i = 1; i <= activePlayers.length; i++) {
+        const candidate = activePlayers[(idx + i) % activePlayers.length];
+        if (!eliminated.includes(candidate)) return candidate;
+    }
+    return null;
+}
+
+/**
+ * Count legal moves for `color` on board `b` (mobility metric).
+ * Capped at 40 to avoid expensive full-scan every call.
+ */
+function mobilityScore3(color, b) {
+    let count = 0;
+    for (let r = 0; r < BS && count < 40; r++) {
+        for (let c = 0; c < BS && count < 40; c++) {
+            if (b[r][c] && b[r][c][0] === color) {
+                count += getLegalMoves3(r, c, b).length;
+            }
+        }
+    }
+    return count;
+}
+
+/**
+ * Full strategic evaluator for `color` on board `b`.
+ * Returns a numeric score; higher = better for `color`.
+ */
 function evaluateFor3(color, b) {
-    let score = 0;
+    const style  = AI_STYLES[color] || 'oportunista';
+    const w      = STYLE_WEIGHTS[style];
+    const myKing = findKing3(color, b);
+
+    let myMat       = 0;
+    let enemyMatSum = 0;
+    let enemyCount  = 0;
+    let kingRisk    = 0;
+    let centerBonus = 0;
+    let attackBonus = 0;
+
     for (let r = 0; r < BS; r++) {
         for (let c = 0; c < BS; c++) {
             const p = b[r][c];
             if (!p) continue;
-            const val = PIECE_VALUES[p[1]] || 0;
-            if (p[0] === color) score += val;
-            else score -= val * 0.5; // Penalize each enemy equally
+
+            const val      = PIECE_VALUES[p[1]] || 0;
+            const isMe     = p[0] === color;
+            const isEnemy  = !isMe && !eliminated.includes(p[0]);
+
+            if (isMe) {
+                myMat += val;
+
+                // Center control bonus
+                if (r >= CENTER_MIN && r <= CENTER_MAX && c >= CENTER_MIN && c <= CENTER_MAX) {
+                    centerBonus += (p[1] === 'p' ? 3 : 5);
+                }
+            } else if (isEnemy) {
+                enemyMatSum += val;
+                enemyCount++;
+
+                // King safety: penalize enemy pieces close to MY king
+                if (myKing) {
+                    const dist = Math.abs(r - myKing.r) + Math.abs(c - myKing.c);
+                    if (dist <= 3) kingRisk += val * (0.4 - dist * 0.08);
+                }
+
+                // Aggressive: bonus for proximity to ENEMY king
+                if (style === 'agresivo' && p[1] === 'k' && myKing) {
+                    const distToEnemyKing = Math.abs(r - myKing.r) + Math.abs(c - myKing.c);
+                    attackBonus += Math.max(0, 20 - distToEnemyKing);
+                }
+            }
         }
     }
-    return score;
+
+    // Check penalty (being in check is very bad)
+    if (isInCheck3(color, b)) kingRisk += 600;
+
+    // Average enemy material (not sum — avoids over-fear with 3+ enemies)
+    const avgEnemyMat = enemyCount > 0 ? enemyMatSum / enemyCount : 0;
+
+    // Mobility (only own — cheap enough)
+    const mobility = mobilityScore3(color, b);
+
+    return (myMat         * w.mat)
+         - (avgEnemyMat)
+         - (kingRisk      * w.kingRisk)
+         + (centerBonus   * w.center)
+         + (mobility      * w.mobility)
+         + (attackBonus   * w.opp);
 }
 
+/**
+ * MVV-LVA comparator: prioritise capturing high-value pieces with low-value attackers.
+ * Promotions also ranked high.
+ */
+function moveOrderScore3(m, b) {
+    const victim    = b[m.to.r][m.to.c];
+    const attacker  = b[m.from.r][m.from.c];
+    const victimVal = victim   ? (PIECE_VALUES[victim[1]]   || 0) : 0;
+    const atkVal    = attacker ? (PIECE_VALUES[attacker[1]] || 0) : 900;
+
+    // Promotion bonus
+    const isPromo = attacker && attacker[1] === 'p' && needsPromotion3(attacker, m.to.r, m.to.c);
+
+    return victimVal * 10 - atkVal + (isPromo ? 800 : 0);
+}
+
+/**
+ * Main AI entry point.
+ * Uses a 1.5-ply "paranoid" search:
+ *   1. Evaluate all own moves.
+ *   2. For each, simulate the BEST capture the next enemy can make.
+ *   3. Blend own score with worst-case reply to pick the safest/best move.
+ */
 function getAIMove3(color) {
+    // --- Gather all legal moves ---
     const allMoves = [];
     for (let r = 0; r < BS; r++) {
         for (let c = 0; c < BS; c++) {
             if (board3[r][c] && board3[r][c][0] === color) {
-                const moves = getLegalMoves3(r, c, board3);
-                moves.forEach(to => allMoves.push({ from:{r,c}, to }));
+                getLegalMoves3(r, c, board3).forEach(to => allMoves.push({ from:{r,c}, to }));
             }
         }
     }
     if (!allMoves.length) return null;
 
-    // Score each move
-    let best = null, bestScore = -Infinity;
+    // --- MVV-LVA sort (captures / promotions first) ---
+    allMoves.sort((a, b) => moveOrderScore3(b, board3) - moveOrderScore3(a, board3));
+
+    const nextPlayer = getNextActivePlayer3(color);
+    let bestMove  = allMoves[0];
+    let bestScore = -Infinity;
+
     for (const m of allMoves) {
-        const piece = board3[m.from.r][m.from.c];
+        const piece    = board3[m.from.r][m.from.c];
         const captured = applyMoveSim3(board3, m.from, m.to);
-        const score = evaluateFor3(color, board3) + Math.random() * 2; // slight randomness
+
+        // ① Base score after own move
+        let score = evaluateFor3(color, board3);
+
+        // ② Anti-loop: penalize returning to a previously seen position
+        const hash = JSON.stringify(board3);
+        const reps = moveHistory3.filter(h => h.hash === hash).length;
+        if (reps > 0) score -= 5000 * reps;
+
+        // ③ Paranoid simulation: assume next player picks best capture on us
+        if (nextPlayer && !eliminated.includes(nextPlayer)) {
+            let worstCase = Infinity;
+            let hasEnemyCapture = false;
+
+            for (let er = 0; er < BS; er++) {
+                for (let ec = 0; ec < BS; ec++) {
+                    const ep = board3[er][ec];
+                    if (!ep || ep[0] !== nextPlayer) continue;
+                    const ems = getLegalMoves3(er, ec, board3);
+                    for (const eto of ems) {
+                        const tgt = board3[eto.r][eto.c];
+                        if (!tgt || tgt[0] === color) { // only look at captures of our pieces
+                            if (!tgt) continue;
+                            hasEnemyCapture = true;
+                            const ePiece    = board3[er][ec];
+                            const eCaptured = applyMoveSim3(board3, {r:er,c:ec}, eto);
+                            const eScore    = evaluateFor3(color, board3);
+                            undoMoveSim3(board3, {r:er,c:ec}, eto, eCaptured, ePiece);
+                            if (eScore < worstCase) worstCase = eScore;
+                        }
+                    }
+                }
+            }
+
+            // Blend: 60% own eval, 40% worst-case defence
+            if (hasEnemyCapture && worstCase < Infinity) {
+                score = score * 0.6 + worstCase * 0.4;
+            }
+        }
+
+        // ④ Tiny jitter to break ties randomly (avoids mechanical repetition)
+        score += Math.random() * 1.5;
+
         undoMoveSim3(board3, m.from, m.to, captured, piece);
-        if (score > bestScore) { bestScore = score; best = m; }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove  = m;
+        }
     }
-    return best;
+
+    return bestMove;
 }
 
 // =========================================================================
@@ -643,6 +825,36 @@ function applyTheme3(theme) {
 }
 
 // =========================================================================
+// PERSPECTIVA DEL TABLERO
+// Cada jugador ve su lado "abajo" mediante una rotación CSS.
+// La lógica interna (índices r/c) NO se modifica.
+// =========================================================================
+
+// Perspectiva actual ('w' | 'b' | 'r' | 'g' | 'spectator')
+let boardPerspective = 'spectator';
+
+/**
+ * Aplica la rotación CSS al tablero según el color del jugador.
+ * Las piezas se contra-rotan para permanecer legibles (hecho en CSS).
+ * @param {string} color - 'w', 'b', 'r', 'g' o 'spectator'
+ */
+function applyPerspective3(color) {
+    const valid = ['w', 'b', 'r', 'g', 'spectator'];
+    if (!valid.includes(color)) color = 'spectator';
+    boardPerspective = color;
+
+    const board = document.getElementById('chessboard3');
+    if (board) {
+        board.setAttribute('data-perspective', color);
+    }
+
+    // Actualizar botones del panel de perspectiva
+    document.querySelectorAll('.perspective-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.color === color);
+    });
+}
+
+// =========================================================================
 // INIT
 // =========================================================================
 
@@ -698,6 +910,16 @@ function initGame3() {
 
     const saved = localStorage.getItem('ajedrezTheme');
     applyTheme3(saved || 'light');
+
+    // --- Panel de perspectiva manual ---
+    const perspPanel = document.getElementById('perspective-panel');
+    if (perspPanel) {
+        perspPanel.querySelectorAll('.perspective-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyPerspective3(btn.dataset.color);
+            });
+        });
+    }
 
     resetGame3(false);
     bsConfigModal.show(); // Show config modal first
@@ -758,6 +980,16 @@ document.getElementById('start-game3-btn').addEventListener('click', () => {
     startTimer3();
     renderStatus3();
     scheduleAITurn3();
+
+    // Aplicar perspectiva automática:
+    // Si hay exactamente 1 humano, ese es el jugador y vemos desde su lado.
+    // Si hay varios humanos → vista espectador (0°) para equidad.
+    const humanPlayers = activePlayers.filter(p => cfg3[p] === 'human');
+    if (humanPlayers.length === 1) {
+        applyPerspective3(humanPlayers[0]);
+    } else {
+        applyPerspective3('spectator');
+    }
 });
 
 document.getElementById('restart-btn3').addEventListener('click', () => {

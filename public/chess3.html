@@ -41,6 +41,16 @@
                 <div id="chessboard3" class="chessboard3"></div>
             </div>
 
+            <!-- Panel de Perspectiva -->
+            <div id="perspective-panel" class="w-100 mb-2 d-flex align-items-center gap-2 flex-wrap justify-content-center">
+                <span class="text-muted small fw-bold me-1">👁 Vista:</span>
+                <button class="perspective-btn btn btn-sm btn-outline-secondary rounded-pill fw-bold active" data-color="spectator" title="Vista neutral">🌐</button>
+                <button class="perspective-btn btn btn-sm rounded-pill fw-bold" data-color="w" title="Perspectiva Blancas" style="background:#eee;color:#333;border:1px solid #aaa;">⬜ Blancas</button>
+                <button class="perspective-btn btn btn-sm rounded-pill fw-bold text-white" data-color="b" title="Perspectiva Negras" style="background:#222;border:1px solid #555;">⬛ Negras</button>
+                <button class="perspective-btn btn btn-sm rounded-pill fw-bold text-white" data-color="r" title="Perspectiva Rojas" style="background:#e63946;border:1px solid #9a0000;">🟥 Rojas</button>
+                <button class="perspective-btn btn btn-sm rounded-pill fw-bold text-white d-none" data-color="g" title="Perspectiva Verdes" style="background:#16a34a;border:1px solid #052e16;" id="perspective-g-btn">🟩 Verdes</button>
+            </div>
+
             <!-- Paneles de Jugadores -->
             <div class="w-100">
                 <div class="row gx-2 gy-2" id="player-cards-row">
@@ -160,6 +170,9 @@
                             const show = e.target.checked;
                             ['4h','4ai','2h2ai','1h3ai'].forEach(id => document.getElementById('preset-'+id).style.display = show ? 'inline-block' : 'none');
                             ['3h','3ai','1h2ai','2h1ai'].forEach(id => document.getElementById('preset-'+id).style.display = show ? 'none' : 'inline-block');
+                            // Mostrar/ocultar botón de perspectiva Verdes
+                            const gBtn = document.getElementById('perspective-g-btn');
+                            if (gBtn) gBtn.classList.toggle('d-none', !show);
                         });
                     </script>
                 </div>
